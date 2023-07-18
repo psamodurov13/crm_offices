@@ -1,0 +1,6 @@
+<div class="btn-group">
+  {% for year in years %}
+<!--  <a href="#" class="btn btn-primary active" aria-current="page">Active link</a>-->
+  <a href="{% url 'year_page' year %}" class="btn btn-primary">{{ year }}</a>
+  {% endfor %}
+</div>

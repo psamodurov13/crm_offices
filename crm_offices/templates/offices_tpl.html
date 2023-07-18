@@ -1,0 +1,5 @@
+{% for office in offices %}
+<li class="nav-item">
+  <a class="nav-link {% if office. == request.path %}active{% endif %}" aria-current="page" href="{% url 'offices' year office.slug %}">{{ office.name }} ({{ office.address }})</a>
+</li>
+{% endfor %}

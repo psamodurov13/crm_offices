@@ -1,0 +1,17 @@
+.content {
+min-height: calc(100vh - 129px);
+margin-top: 56px;
+}
+
+.alert-success {
+--bs-alert-color: #146c43;
+--bs-alert-bg: #d1e7dd;
+--bs-alert-border-color: #a3cfbb;
+--bs-alert-link-color: #146c43;
+}
+.alert-error {
+--bs-alert-color: #b02a37;
+--bs-alert-bg: #f8d7da;
+--bs-alert-border-color: #f1aeb5;
+--bs-alert-link-color: #b02a37;
+}
