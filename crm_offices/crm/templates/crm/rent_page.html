@@ -1,7 +1,96 @@
 {% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% load crispy_forms_filters %}
 
 {% block title %}{{ title }}{% endblock %}
 
 {% block content %}
   <h1>{{ title }}</h1>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Месяц</th>
+        <th>Расход</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for key, value in result_table.items %}
+        {% if value|length > 1 %}
+          {% for item in value %}
+            <tr>
+              {% if forloop.counter == 1%}
+                <td rowspan="{{ value|length }}">{{ key }}</td>
+              {% endif %}
+              <td>{{ item.amount }} {{ item.currency.symbol }}</td>
+            </tr>
+          {% endfor %}
+        {% else %}
+        <tr>
+          <td>{{ key }}</td>
+          {% if value %}
+          <td>{{ value.0.amount }} {{ value.0.currency.symbol }}</td>
+          {% else %}
+          <td>
+            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#add_rent_payment_modal" data-bs-whatever="{{ key }}">Добавить расход</button>
+          </td>
+          {% endif %}
+        </tr>
+        {% endif %}
+      {% endfor %}
+    </tbody>
+  </table>
+
+
+
+<!-- Modal -->
+<div class="modal fade" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true" id="add_rent_payment_modal">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="exampleModalLabel">Modal title</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="post">
+          {% csrf_token %}
+      <div class="modal-body">
+
+            {{ form|crispy }}
+
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        {% if not request.user.is_superuser %}
+        <button type="submit" class="btn btn-lg btn-primary">Добавить</button>
+        {% else %}
+        <button type="submit" class="btn btn-primary">Добавить</button>
+        {% endif %}
+      </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  const exampleModal = document.getElementById('add_rent_payment_modal')
+if (exampleModal) {
+  exampleModal.addEventListener('show.bs.modal', event => {
+    // Button that triggered the modal
+    const button = event.relatedTarget
+    // Extract info from data-bs-* attributes
+    const recipient = button.getAttribute('data-bs-whatever')
+    // If necessary, you could initiate an Ajax request here
+    // and then do the updating in a callback.
+
+    // Update the modal's content.
+    const modalTitle = exampleModal.querySelector('.modal-title')
+    const modalBodyInput = exampleModal.querySelector('.modal-body #id_period')
+
+    modalTitle.textContent = `Оплата аренды за ${recipient}`
+    modalBodyInput.value = recipient
+  })
+}
+</script>
+
 {% endblock %}
+

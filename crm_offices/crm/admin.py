@@ -30,13 +30,19 @@ class FinesAdmin(BaseAdmin):
 
 
 class ExpensesAdmin(BaseAdmin):
-    list_display = ('id', 'amount', 'office', 'expense_type', 'date', 'comment')
+    list_display = ('id', 'amount', 'currency', 'office', 'expense_type', 'date', 'comment')
     list_display_links = ('id', 'amount')
     search_fields = ('comment',)
     list_filter = ('office', 'expense_type',)
 
 
+class CurrencyAdmin(BaseAdmin):
+    list_display = ('id', 'name', 'symbol')
+    list_display_links = ('id', 'name')
+
+
 admin.site.register(Offices, OfficesAdmin)
+admin.site.register(Currency, CurrencyAdmin)
 admin.site.register(Employees, EmployeesAdmin)
 admin.site.register(Fines, FinesAdmin)
 admin.site.register(ExpensesTypes)

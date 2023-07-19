@@ -35,6 +35,7 @@ class Employees(CustomStr, models.Model):
         verbose_name = 'Сотрудник'
         verbose_name_plural = 'Сотрудники'
 
+
 class Fines(CustomStr, models.Model):
     date = models.DateField(verbose_name='Дата штрафа')
     amount = models.IntegerField(verbose_name='Сумма штрафа')
@@ -45,6 +46,7 @@ class Fines(CustomStr, models.Model):
         verbose_name = 'Штраф'
         verbose_name_plural = 'Штрафы'
 
+
 class ExpensesTypes(CustomStr, models.Model):
     name = models.CharField(max_length=255, verbose_name='Название типа расхода')
 
@@ -53,13 +55,25 @@ class ExpensesTypes(CustomStr, models.Model):
         verbose_name_plural = 'Типы расходов'
 
 
+class Currency(CustomStr, models.Model):
+    name = models.CharField(verbose_name='Валюта')
+    symbol = models.CharField(verbose_name='Символ')
+
+    class Meta:
+        verbose_name = 'Валюта'
+        verbose_name_plural = 'Валюты'
+
+
 class Expenses(CustomStr, models.Model):
     date = models.DateField(verbose_name='Дата расхода')
+    period = models.DateField(verbose_name='Оплата за месяц')
     amount = models.IntegerField(verbose_name='Сумма расхода')
+    currency = models.ForeignKey(Currency, default=1,
+                                 verbose_name='Валюта', on_delete=models.CASCADE, related_name='expenses')
     office = models.ForeignKey(Offices, verbose_name='Офис', on_delete=models.CASCADE, related_name='expenses')
     expense_type = models.ForeignKey(ExpensesTypes, verbose_name='Тип расхода', on_delete=models.CASCADE,
                                      related_name='expenses')
-    comment = models.TextField(verbose_name='Комментарий')
+    comment = models.TextField(verbose_name='Комментарий', blank=True)
 
     class Meta:
         verbose_name = 'Расход'
