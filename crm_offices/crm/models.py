@@ -14,8 +14,8 @@ class Offices(CustomStr, models.Model):
     admin_user = models.ForeignKey(User, verbose_name='Администратор пункта', on_delete=models.SET_NULL, null=True,
                                    related_name='office')
 
-    def get_absolute_url(self, year):
-        return reverse('offices', year, kwargs={'slug': self.slug})
+    def get_absolute_url(self):
+        return reverse('offices', kwargs={'slug': self.slug})
 
     class Meta:
         verbose_name = 'Пункт'

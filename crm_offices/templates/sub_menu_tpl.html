@@ -1,0 +1,5 @@
+<div class="btn-group my-2">
+{% for key, value in menu_dict.items %}
+  <a href="{% url key %}" class="btn btn-outline-primary {% if request.path == value.path %}active{% endif %}" aria-current="page">{{ value.name }}</a>
+{% endfor %}
+</div>
