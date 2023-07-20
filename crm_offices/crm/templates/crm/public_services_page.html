@@ -6,11 +6,16 @@
 
 {% block content %}
   <h1>{{ title }}</h1>
+  {% if request.user.is_superuser %}
+  <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#add_payment_modal">Добавить расход</button>
+  {% endif %}
   <table class="table">
     <thead>
       <tr>
         <th>Месяц</th>
+        <th>Дата</th>
         <th>Расход</th>
+        <th>Комментарий</th>
       </tr>
     </thead>
     <tbody>
@@ -21,22 +26,22 @@
               {% if forloop.counter == 1%}
                 <td rowspan="{{ value|length }}">{{ key }}</td>
               {% endif %}
-              <td>{{ item.amount }} {{ item.currency.symbol }} ({{ item.date }})</td>
+              <td>{{ item.date }}</td>
+              <td>{{ item.amount }} {{ item.currency.symbol }}</td>
+              <td>{{ item.comment }}</td>
             </tr>
           {% endfor %}
         {% else %}
         <tr>
           <td>{{ key }}</td>
           {% if value %}
-          <td>{{ value.0.amount }} {{ value.0.currency.symbol }} ({{ item.date }})</td>
+          <td>{{ value.0.date }}</td>
+          <td>{{ value.0.amount }} {{ value.0.currency.symbol }}</td>
+          <td>{{ item.comment }}</td>
           {% else %}
-          <td>
-            {% if request.user.is_superuser %}
-            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#add_rent_payment_modal" data-bs-whatever="{{ key }}">Добавить расход</button>
-            {% else %}
-            -
-            {% endif %}
-          </td>
+          <td>-</td>
+          <td>-</td>
+          <td>-</td>
           {% endif %}
         </tr>
         {% endif %}
@@ -47,7 +52,7 @@
 
 
 <!-- Modal -->
-<div class="modal fade" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true" id="add_rent_payment_modal">
+<div class="modal fade" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true" id="add_payment_modal">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
@@ -74,27 +79,6 @@
     </div>
   </div>
 </div>
-
-<script>
-  const exampleModal = document.getElementById('add_rent_payment_modal')
-if (exampleModal) {
-  exampleModal.addEventListener('show.bs.modal', event => {
-    // Button that triggered the modal
-    const button = event.relatedTarget
-    // Extract info from data-bs-* attributes
-    const recipient = button.getAttribute('data-bs-whatever')
-    // If necessary, you could initiate an Ajax request here
-    // and then do the updating in a callback.
-
-    // Update the modal's content.
-    const modalTitle = exampleModal.querySelector('.modal-title')
-    const modalBodyInput = exampleModal.querySelector('.modal-body #id_period')
-
-    modalTitle.textContent = `Оплата аренды за ${recipient}`
-    modalBodyInput.value = recipient
-  })
-}
-</script>
 
 {% endblock %}
 

@@ -22,12 +22,19 @@ class AddRentPaymentForm(forms.Form):
         initial=1
     )
 
+
+class AddExpenseForm(forms.Form):
+    date = forms.DateField(label='Дата платежа', widget=forms.DateInput(), initial=datetime.datetime.today())
+    amount = forms.IntegerField(label='Сумма', widget=forms.TextInput())
+    comment = forms.Field(label='Комментарий', widget=forms.TextInput())
+
     # def clean(self):
-    #     self.data = self.data.copy()
-    #     self.data['period'] = '2023-01-01'
+    #     cleaned_data = self.cleaned_data.copy()
+    #     # self.data['period'] = '2023-01-01'
     #     # self.data['period'] = datetime.date(2023, 1, 1)
+    #     cleaned_data['comment'] = self.data['comment']
     #     logger.info(f'CLEAN DATA - {self.data} - {self.cleaned_data}')
-    #     return self.cleaned_data
+    #     return cleaned_data
 
     # def __init__(self, *args, **kwargs):
     #     current_year = kwargs.pop('current_year')

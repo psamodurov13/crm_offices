@@ -10,7 +10,13 @@ register = template.Library()
 @register.inclusion_tag('offices_tpl.html')
 def get_offices(request):
     current_office = get_office(request.session)
-    offices = Offices.objects.all()
+    if request.user.is_superuser:
+        offices = Offices.objects.all()
+    else:
+        if request.user.is_authenticated:
+            offices = Offices.objects.filter(admin_user=request.user)
+        else:
+            offices = None
     logger.info(f'PATH - {request.path}')
     return {'offices': offices, 'request': request, 'current_office': current_office}
 

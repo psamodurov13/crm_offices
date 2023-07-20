@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+  <h1>{{ title }}</h1>
+<div class="row">
+  {% for office in offices %}
+  <div class="col-sm-12 col-md-6 col-lg-4 p-2">
+    <div class="card">
+      <div class="card-header">
+        {{ office.name }}
+      </div>
+      <div class="card-body">
+        <p class="card-text m-1">Адрес: {{ office.address }}</p>
+        <p class="card-text m-1">Телефон: {{ office.phone }}</p>
+        <p class="card-text m-1">Админ: {{ office.admin_user }}</p>
+        <a href="{{ office.get_absolute_url }}" class="btn btn-primary">Выбрать</a>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+  {% include 'inc/_pagination.html' %}
+{% endblock %}

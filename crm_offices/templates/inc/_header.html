@@ -16,6 +16,11 @@
           <li class="nav-item">
             <a class="nav-link {% if request.path == '/' %}active{% endif %}" aria-current="page" href="{% url 'home' %}">Home</a>
           </li>
+          {% if request.user.is_superuser %}
+          <li class="nav-item">
+            <a class="nav-link {% if request.path == '/offices/' %}active{% endif %}" aria-current="page" href="{% url 'offices_list' %}">Все пункты</a>
+          </li>
+          {% endif %}
           {% get_offices request %}
           <!--
           <li class="nav-item dropdown">
@@ -52,7 +57,9 @@
   </div>
 </nav>
 <div class="container content py-5">
+  {% if request.user.is_authenticated %}
   <div class="row text-center">
     {% get_years_buttons request %}
     {% get_sub_menu request %}
   </div>
+  {% endif %}
