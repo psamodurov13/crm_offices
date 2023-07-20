@@ -60,6 +60,8 @@
   {% if request.user.is_authenticated %}
   <div class="row text-center">
     {% get_years_buttons request %}
-    {% get_sub_menu request %}
+    {% if request.session.office %}
+      {% get_sub_menu request %}
+    {% endif %}
   </div>
   {% endif %}

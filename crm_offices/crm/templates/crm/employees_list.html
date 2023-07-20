@@ -4,24 +4,23 @@
 
 {% block title %}{{ title }}{% endblock %}
 
-
 {% block content %}
 <h1>{{ title }}</h1>
 {% if request.user.is_superuser %}
-  <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#add_office">Добавить пункт</button>
+  <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#add_employee">Добавить расход</button>
 {% endif %}
 <div class="row">
-  {% for office in offices %}
+  {% for employee in employees %}
   <div class="col-sm-12 col-md-6 col-lg-4 p-2">
     <div class="card">
       <div class="card-header">
-        {{ office.name }}
+        {{ employee.name }}
       </div>
       <div class="card-body">
-        <p class="card-text m-1">Адрес: {{ office.address }}</p>
-        <p class="card-text m-1">Телефон: {{ office.phone }}</p>
-        <p class="card-text m-1">Админ: {{ office.admin_user }}</p>
-        <a href="{{ office.get_absolute_url }}" class="btn btn-primary">Выбрать</a>
+        <p class="card-text m-1">Зарплата: {{ employee.salary }}</p>
+        <p class="card-text m-1">Телефон: {{ employee.phone }}</p>
+        <p class="card-text m-1">Добавлен: {{ employee.created_at }}</p>
+        <p class="card-text m-1">Комментарий: {{ employee.comment }}</p>
       </div>
     </div>
   </div>
@@ -31,7 +30,7 @@
   {% include 'inc/_pagination.html' %}
 
 <!-- Modal -->
-<div class="modal fade" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true" id="add_office">
+<div class="modal fade" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true" id="add_employee">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
@@ -43,7 +42,6 @@
       <div class="modal-body">
 
             {{ form|crispy }}
-
 
       </div>
       <div class="modal-footer">
@@ -59,5 +57,3 @@
   </div>
 </div>
 {% endblock %}
-
-

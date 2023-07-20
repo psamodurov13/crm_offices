@@ -2,7 +2,7 @@ import datetime
 from crm_offices.settings import logger
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django import forms
-from .models import Currency
+from .models import Currency, Employees, Offices
 
 
 
@@ -39,3 +39,18 @@ class AddExpenseForm(forms.Form):
     # def __init__(self, *args, **kwargs):
     #     current_year = kwargs.pop('current_year')
     #     super().__init__(*args, **kwargs)
+
+
+class AddEmployeeForm(forms.ModelForm):
+    class Meta:
+        model = Employees
+        fields = ['name', 'phone', 'office', 'salary', 'comment']
+        widgets = {
+            'comment': forms.Textarea(attrs={'rows': 5}),
+        }
+
+
+class AddOfficeForm(forms.ModelForm):
+    class Meta:
+        model = Offices
+        fields = ['name', 'slug', 'address', 'phone', 'admin_user']

@@ -7,7 +7,7 @@ from crm_offices.settings import logger
 
 class Offices(CustomStr, models.Model):
     name = models.CharField(verbose_name='Название пункта')
-    slug = models.SlugField(verbose_name='URL')
+    slug = models.SlugField(verbose_name='URL', unique=True)
     address = models.CharField(verbose_name='Адрес')
     phone = models.CharField(verbose_name='Телефон')
     created_at = models.DateField(verbose_name='Дата добавления', auto_now=True)

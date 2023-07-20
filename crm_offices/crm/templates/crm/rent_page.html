@@ -28,7 +28,7 @@
         <tr>
           <td>{{ key }}</td>
           {% if value %}
-          <td>{{ value.0.amount }} {{ value.0.currency.symbol }} ({{ item.date }})</td>
+          <td>{{ value.0.amount }} {{ value.0.currency.symbol }} ({{ value.0.date }})</td>
           {% else %}
           <td>
             {% if request.user.is_superuser %}
