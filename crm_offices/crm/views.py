@@ -4,7 +4,7 @@ from django.urls import reverse_lazy
 from django.views.generic import ListView
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
-from .forms import UserLoginForm, AddRentPaymentForm, AddExpenseForm, AddEmployeeForm, AddOfficeForm
+from .forms import UserLoginForm, AddRentPaymentForm, AddExpenseForm, AddEmployeeForm, AddOfficeForm, AddFineForm
 from django.contrib import messages
 from crm_offices.settings import logger
 from .models import *
@@ -121,7 +121,7 @@ def rent_page(request):
     return render(request, 'crm/rent_page.html', context)
 
 
-def public_services_page(request):
+def expenses_page(request):
     logger.info(f'REQUEST {request.path}')
     if request.path == '/public_services/':
         data = {
@@ -167,6 +167,43 @@ def public_services_page(request):
     context['result_table'] = get_expenses(current_office, current_year, data["name"])
     context['form'] = AddExpenseForm()
     return render(request, 'crm/expenses_page.html', context)
+
+
+def fines_page(request):
+    context = {
+        'title': 'Штрафы'
+    }
+    current_office = get_office(request.session)
+    current_year = get_year(request.session)
+    if request.method == 'POST':
+        pass
+        post = request.POST.copy()
+        logger.info(f'POST  - {post}')
+        request.POST = post
+        form = AddFineForm(request.POST)
+        if form.is_valid():
+            form_data = form.cleaned_data
+            logger.info(f'FORM DATA - {form_data}')
+            new_fine = Fines.objects.create(
+                date=form_data['date'],
+                amount=form_data['amount'],
+                employee=form_data['employee'],
+                comment=form_data['comment']
+            )
+            logger.info(f'NEW EXPENSE WAS CREATED - {new_fine}')
+            messages.success(request, f'Новый штраф добавлен')
+        else:
+            logger.info(f'FORM ERRORS - {form.errors}')
+            context['form'] = form
+            messages.error(request, 'Допущена ошибка. Проверьте форму')
+            return render(request, 'crm/expenses_page.html', context)
+
+    # context['result_table'] = get_expenses(current_office, current_year, data["name"])
+    #TODO сделать словарь со штрафами для каждого сотрудника и вывести их на странице в виде аккордеона
+    #TODO в форму передавать только сотрудников выбранного оффиса
+    context['results'] = Fines.objects.filter(date__year=current_year, employee__office=Offices.objects.get(slug=current_office))
+    context['form'] = AddFineForm()
+    return render(request, 'crm/fines_page.html', context)
 
 
 class OfficesList(FormMixin, ListView):

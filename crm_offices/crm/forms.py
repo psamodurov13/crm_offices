@@ -2,7 +2,7 @@ import datetime
 from crm_offices.settings import logger
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django import forms
-from .models import Currency, Employees, Offices
+from .models import Currency, Employees, Offices, Fines
 
 
 
@@ -54,3 +54,9 @@ class AddOfficeForm(forms.ModelForm):
     class Meta:
         model = Offices
         fields = ['name', 'slug', 'address', 'phone', 'admin_user']
+
+
+class AddFineForm(forms.ModelForm):
+    class Meta:
+        model = Fines
+        fields = ['date', 'amount', 'employee', 'comment']

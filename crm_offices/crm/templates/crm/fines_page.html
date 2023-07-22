@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% load crispy_forms_filters %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+  <h1>{{ title }}</h1>
+  {% if request.user.is_superuser %}
+  <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#add_payment_modal">Добавить расход</button>
+  {% endif %}
+
+{{results}}
+{% comment %}
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Месяц</th>
+        <th>Дата</th>
+        <th>Расход</th>
+        <th>Комментарий</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for key, value in result_table.items %}
+        {% if value|length > 1 %}
+          {% for item in value %}
+            <tr>
+              {% if forloop.counter == 1%}
+                <td rowspan="{{ value|length }}">{{ key }}</td>
+              {% endif %}
+              <td>{{ item.date }}</td>
+              <td>{{ item.amount }} {{ item.currency.symbol }}</td>
+              <td>{{ item.comment }}</td>
+            </tr>
+          {% endfor %}
+        {% else %}
+        <tr>
+          <td>{{ key }}</td>
+          {% if value %}
+          <td>{{ value.0.date }}</td>
+          <td>{{ value.0.amount }} {{ value.0.currency.symbol }}</td>
+          <td>{{ value.0.comment }}</td>
+          {% else %}
+          <td>-</td>
+          <td>-</td>
+          <td>-</td>
+          {% endif %}
+        </tr>
+        {% endif %}
+      {% endfor %}
+    </tbody>
+  </table>
+{% endcomment %}
+
+
+<!-- Modal -->
+<div class="modal fade" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true" id="add_payment_modal">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="exampleModalLabel">Modal title</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="post">
+          {% csrf_token %}
+      <div class="modal-body">
+
+            {{ form|crispy }}
+
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        {% if not request.user.is_superuser %}
+        <button type="submit" class="btn btn-lg btn-primary">Добавить</button>
+        {% else %}
+        <button type="submit" class="btn btn-primary">Добавить</button>
+        {% endif %}
+      </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+

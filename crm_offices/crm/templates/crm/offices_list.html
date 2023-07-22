@@ -8,7 +8,7 @@
 {% block content %}
 <h1>{{ title }}</h1>
 {% if request.user.is_superuser %}
-  <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#add_office">Добавить пункт</button>
+  <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#add_fine">Добавить пункт</button>
 {% endif %}
 <div class="row">
   {% for office in offices %}
@@ -31,7 +31,7 @@
   {% include 'inc/_pagination.html' %}
 
 <!-- Modal -->
-<div class="modal fade" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true" id="add_office">
+<div class="modal fade" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true" id="add_fine">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
