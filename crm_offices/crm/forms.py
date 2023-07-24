@@ -60,3 +60,20 @@ class AddFineForm(forms.ModelForm):
     class Meta:
         model = Fines
         fields = ['date', 'amount', 'employee', 'comment']
+
+    def __init__(self, *args, **kwargs):
+        employees_choices = kwargs.pop('employees_choices')
+        super().__init__(*args, **kwargs)
+
+        self.fields['employee'] = forms.ChoiceField(
+                label='Сотрудник',
+                choices=employees_choices, required=False
+            )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        logger.info(f'CLEAN DATA - {cleaned_data}')
+        employee_id = cleaned_data['employee']
+        cleaned_data['employee'] = Employees.objects.get(id=int(employee_id))
+        logger.info(f'FINAL CLEAN DATA - {cleaned_data}')
+        return cleaned_data

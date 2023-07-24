@@ -18,3 +18,17 @@ margin-top: 56px;
 table .weekend {
     background-color: yellow;
 }
+table .custom-btn {
+    width: 100%;
+    border: none;
+    border-radius: 5px;
+    height: 100%;
+    background: none;
+}
+table .custom-btn:hover {
+    background-color: lightgray;
+    cursor: pointer;
+}
+table .custom-btn.red-btn {
+    background-color: lightcoral;
+}

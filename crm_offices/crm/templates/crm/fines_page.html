@@ -7,11 +7,10 @@
 {% block content %}
   <h1>{{ title }}</h1>
   {% if request.user.is_superuser %}
-  <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#add_payment_modal">Добавить расход</button>
+  <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#add_payment_modal" data-bs-year="{{ today.year }}" data-bs-month="{{ today.month }}" data-bs-day="{{ today.day }}">Добавить штраф</button>
   {% endif %}
 
-{{results}}
-<div class="accordion accordion-flush" id="accordionFines">
+<div class="accordion accordion-flush my-3" id="accordionFines">
 {% for month_name, month_data in result_dict.items %}
   <div class="accordion-item">
     <h2 class="accordion-header">
@@ -44,9 +43,11 @@
             {% for employee_id, employee_row in month_data.employees_rows.items %}
             <tr>
               {% for cell in employee_row %}
-                <th>{{ cell }}
+                <th>
                   {% if forloop.counter != 1 %}
-                  <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#add_payment_modal" data-bs-year="{{ year }}" data-bs-month="{{ month_data.month_number|add:'-1' }}" data-bs-day="{{ forloop.counter|add:'-1' }}" data-bs-employee="{{ employee_id }}">+</button>
+                  <button class="custom-btn{% if cell.0 == '*' %} red-btn{% endif %}" data-bs-toggle="modal" data-bs-target="#add_payment_modal" data-bs-year="{{ year }}" data-bs-month="{{ month_data.month_number|add:'-1' }}" data-bs-day="{{ forloop.counter|add:'-1' }}" data-bs-employee="{{ employee_id }}" {% if cell.1 != '-' %}data-bs-toggle2="popover" data-bs-html="true" data-bs-trigger="hover focus" data-bs-content="{{ cell.1 }}"{% endif %}>{{ cell.0 }}</button>
+                  {% else %}
+                  {{ cell }}
                   {% endif %}
                 </th>
               {% endfor %}
@@ -60,7 +61,7 @@
 {% endfor %}
 </div>
 
-
+<h2>Таблица со всеми штрафами</h2>
   <table class="table">
     <thead>
       <tr>

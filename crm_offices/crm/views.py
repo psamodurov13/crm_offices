@@ -176,12 +176,13 @@ def fines_page(request):
     }
     current_office = get_office(request.session)
     current_year = get_year(request.session)
+    current_employees = Employees.objects.filter(office=Offices.objects.get(slug=current_office)).order_by('name')
+    employees_choices = [(i.id, i.name) for i in current_employees]
     if request.method == 'POST':
-        pass
         post = request.POST.copy()
         logger.info(f'POST  - {post}')
         request.POST = post
-        form = AddFineForm(request.POST)
+        form = AddFineForm(request.POST, employees_choices=employees_choices)
         if form.is_valid():
             form_data = form.cleaned_data
             logger.info(f'FORM DATA - {form_data}')
@@ -202,7 +203,7 @@ def fines_page(request):
     # context['result_table'] = get_expenses(current_office, current_year, data["name"])
     #TODO сделать словарь со штрафами для каждого сотрудника и вывести их на странице в виде аккордеона
     #TODO в форму передавать только сотрудников выбранного оффиса
-    current_employees = Employees.objects.filter(office=Offices.objects.get(slug=current_office)).order_by('name')
+
     all_fines = Fines.objects.filter(employee__in=current_employees).order_by('date')
     result_dict = {}
     for month_number, month_name in months.items():
@@ -215,7 +216,8 @@ def fines_page(request):
             all_days.append(day)
         employees_rows = {}
         for employee in current_employees:
-            employees_rows[employee.id] = [employee.name] + ['-'] * days[1]
+            employees_rows[employee.id] = [employee.name] + [['-', '-'][:]] * days[1]
+            logger.info(f'employees_rows - {employees_rows[employee.id]}')
         result_month = {'weekdays': weekdays, 'all_days': all_days, 'employees_rows': employees_rows, 'month_number': month_number}
         result_dict[month_name] = result_month
         logger.info(f'{month_name} - {weekdays} / {all_days}')
@@ -223,10 +225,25 @@ def fines_page(request):
         fine_month = fine.date.month
         fine_day = fine.date.day
         fine_employee = fine.employee
-        result_dict[months[fine_month]]['employees_rows'][fine_employee.id][fine_day] = '*'
+        current_fine_data = result_dict[months[fine_month]]['employees_rows'][fine_employee.id][fine_day][1]
+        if current_fine_data != '-':
+            new_fine_data = current_fine_data + '<br />' + f'{fine.amount} / {fine.comment}'
+        else:
+            new_fine_data = f'{fine.amount} / {fine.comment}'
+        result_dict[months[fine_month]]['employees_rows'][fine_employee.id][fine_day] = ['*', new_fine_data]
+        logger.info(f'{result_dict[months[fine_month]]["employees_rows"][fine_employee.id]}')
+    today_date = date.today()
+    today = {
+        'year': today_date.year,
+        'month': today_date.month - 1,
+        'day': today_date.day
+    }
+    context['today'] = today
     context['result_dict'] = result_dict
     context['results'] = Fines.objects.filter(date__year=current_year, employee__office=Offices.objects.get(slug=current_office))
-    context['form'] = AddFineForm()
+    context['form'] = AddFineForm(
+        employees_choices=employees_choices
+        )
     context['year'] = current_year
     context['all_fines'] = all_fines
     return render(request, 'crm/fines_page.html', context)
