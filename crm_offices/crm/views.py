@@ -8,9 +8,10 @@ from .forms import UserLoginForm, AddRentPaymentForm, AddExpenseForm, AddEmploye
 from django.contrib import messages
 from crm_offices.settings import logger
 from .models import *
-from datetime import datetime
+from datetime import datetime, date
 from crm_offices.utils import get_office, get_year, months, months_to_digit
 from django.views.generic.edit import FormMixin
+from calendar import monthrange
 
 
 @login_required
@@ -201,8 +202,33 @@ def fines_page(request):
     # context['result_table'] = get_expenses(current_office, current_year, data["name"])
     #TODO сделать словарь со штрафами для каждого сотрудника и вывести их на странице в виде аккордеона
     #TODO в форму передавать только сотрудников выбранного оффиса
+    current_employees = Employees.objects.filter(office=Offices.objects.get(slug=current_office)).order_by('name')
+    all_fines = Fines.objects.filter(employee__in=current_employees).order_by('date')
+    result_dict = {}
+    for month_number, month_name in months.items():
+        days = monthrange(current_year, month_number)
+        first_day = days[0]
+        weekdays = []
+        all_days = []
+        for day in range(1, days[1] + 1):
+            weekdays.append(date(current_year, month_number, day).weekday())
+            all_days.append(day)
+        employees_rows = {}
+        for employee in current_employees:
+            employees_rows[employee.id] = [employee.name] + ['-'] * days[1]
+        result_month = {'weekdays': weekdays, 'all_days': all_days, 'employees_rows': employees_rows, 'month_number': month_number}
+        result_dict[month_name] = result_month
+        logger.info(f'{month_name} - {weekdays} / {all_days}')
+    for fine in all_fines:
+        fine_month = fine.date.month
+        fine_day = fine.date.day
+        fine_employee = fine.employee
+        result_dict[months[fine_month]]['employees_rows'][fine_employee.id][fine_day] = '*'
+    context['result_dict'] = result_dict
     context['results'] = Fines.objects.filter(date__year=current_year, employee__office=Offices.objects.get(slug=current_office))
     context['form'] = AddFineForm()
+    context['year'] = current_year
+    context['all_fines'] = all_fines
     return render(request, 'crm/fines_page.html', context)
 
 

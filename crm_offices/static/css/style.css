@@ -1,5 +1,5 @@
 .content {
-min-height: calc(100vh - 129px);
+min-height: calc(100vh - 193px);
 margin-top: 56px;
 }
 
@@ -14,4 +14,7 @@ margin-top: 56px;
 --bs-alert-bg: #f8d7da;
 --bs-alert-border-color: #f1aeb5;
 --bs-alert-link-color: #b02a37;
+}
+table .weekend {
+    background-color: yellow;
 }

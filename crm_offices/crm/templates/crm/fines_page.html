@@ -11,47 +11,77 @@
   {% endif %}
 
 {{results}}
-{% comment %}
+<div class="accordion accordion-flush" id="accordionFines">
+{% for month_name, month_data in result_dict.items %}
+  <div class="accordion-item">
+    <h2 class="accordion-header">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse{{ month_name }}" aria-expanded="false" aria-controls="flush-collapse{{ month_name }}">
+        {{ month_name }}
+      </button>
+    </h2>
+    <div id="flush-collapse{{ month_name }}" class="accordion-collapse collapse" data-bs-parent="#accordionFines">
+      <div class="accordion-body overflow-scroll">
+        <table class="table text-center">
+          <colgroup>
+            <col></col>
+            {% for weekday in month_data.weekdays %}
+              {% if weekday == 5 or weekday == 6 %}
+              <col class="weekend"></col>
+              {% else %}
+              <col></col>
+              {% endif %}
+            {% endfor %}
+          </colgroup>
+          <thead>
+            <tr>
+              <th style="min-width: 200px;">ФИО</th>
+              {% for day in month_data.all_days %}
+                <th style="min-width: 50px;">{{ day }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <body>
+            {% for employee_id, employee_row in month_data.employees_rows.items %}
+            <tr>
+              {% for cell in employee_row %}
+                <th>{{ cell }}
+                  {% if forloop.counter != 1 %}
+                  <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#add_payment_modal" data-bs-year="{{ year }}" data-bs-month="{{ month_data.month_number|add:'-1' }}" data-bs-day="{{ forloop.counter|add:'-1' }}" data-bs-employee="{{ employee_id }}">+</button>
+                  {% endif %}
+                </th>
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </body>
+        </table>
+      </div>
+    </div>
+  </div>
+{% endfor %}
+</div>
+
+
   <table class="table">
     <thead>
       <tr>
-        <th>Месяц</th>
         <th>Дата</th>
-        <th>Расход</th>
+        <th>Сотрудник</th>
+        <th>Штраф</th>
         <th>Комментарий</th>
       </tr>
     </thead>
     <tbody>
-      {% for key, value in result_table.items %}
-        {% if value|length > 1 %}
-          {% for item in value %}
-            <tr>
-              {% if forloop.counter == 1%}
-                <td rowspan="{{ value|length }}">{{ key }}</td>
-              {% endif %}
-              <td>{{ item.date }}</td>
-              <td>{{ item.amount }} {{ item.currency.symbol }}</td>
-              <td>{{ item.comment }}</td>
-            </tr>
-          {% endfor %}
-        {% else %}
+      {% for fine in all_fines %}
         <tr>
-          <td>{{ key }}</td>
-          {% if value %}
-          <td>{{ value.0.date }}</td>
-          <td>{{ value.0.amount }} {{ value.0.currency.symbol }}</td>
-          <td>{{ value.0.comment }}</td>
-          {% else %}
-          <td>-</td>
-          <td>-</td>
-          <td>-</td>
-          {% endif %}
+          <td>{{ fine.date }}</td>
+          <td>{{ fine.employee.name }}</td>
+          <td>{{ fine.amount }}</td>
+          <td>{{ fine.comment }}</td>
         </tr>
-        {% endif %}
+        <tr>
       {% endfor %}
     </tbody>
   </table>
-{% endcomment %}
 
 
 <!-- Modal -->
@@ -82,6 +112,34 @@
     </div>
   </div>
 </div>
+
+<script>
+  const exampleModal = document.getElementById('add_payment_modal')
+if (exampleModal) {
+  exampleModal.addEventListener('show.bs.modal', event => {
+    // Button that triggered the modal
+    const button = event.relatedTarget
+    // Extract info from data-bs-* attributes
+    const employee = button.getAttribute('data-bs-employee')
+    const day = button.getAttribute('data-bs-day')
+    const month = button.getAttribute('data-bs-month')
+    const year = button.getAttribute('data-bs-year')
+    const date = new Date(year, month, day)
+    console.log(date)
+    // If necessary, you could initiate an Ajax request here
+    // and then do the updating in a callback.
+
+    // Update the modal's content.
+    const modalTitle = exampleModal.querySelector('.modal-title')
+    const modalBodyDate = exampleModal.querySelector('.modal-body #id_date')
+    const modalBodyEmployee = exampleModal.querySelector('.modal-body #id_employee')
+
+    modalTitle.textContent = `Добавление штрафа ${date.toLocaleDateString()}`
+    modalBodyDate.value = date.toLocaleDateString()
+    modalBodyEmployee.value = employee
+  })
+}
+</script>
 
 {% endblock %}
 
