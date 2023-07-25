@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% load crispy_forms_filters %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+  <h1>{{ title }}</h1>
+  {% if request.user.is_superuser %}
+  <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#add_payment_modal" data-bs-year="{{ today.year }}" data-bs-month="{{ today.month }}" data-bs-day="{{ today.day }}">Добавить зарплату</button>
+  {% endif %}
+
+<div class="accordion accordion-flush my-3" id="accordionFines">
+{% for month_name, month_data in result_dict.items %}
+  <div class="accordion-item">
+    <h2 class="accordion-header">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse{{ month_name }}" aria-expanded="false" aria-controls="flush-collapse{{ month_name }}">
+        {{ month_name }}
+      </button>
+    </h2>
+    <div id="flush-collapse{{ month_name }}" class="accordion-collapse collapse" data-bs-parent="#accordionFines">
+      <div class="accordion-body overflow-scroll">
+        <table class="table text-center">
+          <colgroup>
+            <col></col>
+            {% for weekday in month_data.weekdays %}
+              {% if weekday == 5 or weekday == 6 %}
+              <col class="weekend"></col>
+              {% else %}
+              <col></col>
+              {% endif %}
+            {% endfor %}
+          </colgroup>
+          <thead>
+            <tr>
+              <th style="min-width: 200px;">ФИО</th>
+              {% for day in month_data.all_days %}
+                <th style="min-width: 50px;">{{ day }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <body>
+            {% for employee_id, employee_row in month_data.employees_rows.items %}
+            <tr>
+              {% for cell in employee_row %}
+                <th>
+                  {% if forloop.counter != 1 %}
+                  <button class="custom-btn {% if cell.0 == '*' %}red-btn{% elif cell.0 == '$' %}green-btn{% elif cell.0 == '* $' %}double-color-btn{% endif %}" data-bs-toggle="modal" data-bs-target="#add_payment_modal" data-bs-year="{{ year }}" data-bs-month="{{ month_data.month_number|add:'-1' }}" data-bs-day="{{ forloop.counter|add:'-1' }}" data-bs-employee="{{ employee_id }}" data-bs-amount="{{ employee_row.0.salary }}" {% if cell.1.fines or cell.1.salary %}data-bs-toggle2="popover" data-bs-html="true" data-bs-trigger="hover focus" data-bs-content="
+{% if cell.1.fines %}
+<p>Штрафы:</p>
+{% for fine in cell.1.fines %}
+<p>{{ fine }}</p>
+{% endfor %}
+<hr>
+{% endif %}
+{% if cell.1.salary %}
+<p>Выплаты:</p>
+{% for sal in cell.1.salary %}
+<p>{{ sal }}</p>
+{% endfor %}
+<hr>
+{% endif %}
+"{% endif %}>
+                    {{ cell.0 }}
+                  </button>
+                  {% else %}
+                  {{ cell.name }}
+                  {% endif %}
+                </th>
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </body>
+        </table>
+      </div>
+    </div>
+  </div>
+{% endfor %}
+</div>
+
+
+<!-- Modal -->
+<div class="modal fade" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true" id="add_payment_modal">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="exampleModalLabel">Modal title</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="post">
+          {% csrf_token %}
+      <div class="modal-body">
+
+            {{ form|crispy }}
+
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        {% if not request.user.is_superuser %}
+        <button type="submit" class="btn btn-lg btn-primary">Добавить</button>
+        {% else %}
+        <button type="submit" class="btn btn-primary">Добавить</button>
+        {% endif %}
+      </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  const exampleModal = document.getElementById('add_payment_modal')
+if (exampleModal) {
+  exampleModal.addEventListener('show.bs.modal', event => {
+    // Button that triggered the modal
+    const button = event.relatedTarget
+    // Extract info from data-bs-* attributes
+    const employee = button.getAttribute('data-bs-employee')
+    const day = button.getAttribute('data-bs-day')
+    const month = button.getAttribute('data-bs-month')
+    const year = button.getAttribute('data-bs-year')
+    const salary = button.getAttribute('data-bs-amount')
+    const date = new Date(year, month, day)
+    // If necessary, you could initiate an Ajax request here
+    // and then do the updating in a callback.
+
+    // Update the modal's content.
+    const modalTitle = exampleModal.querySelector('.modal-title')
+    const modalBodyDate = exampleModal.querySelector('.modal-body #id_date')
+    const modalBodyEmployee = exampleModal.querySelector('.modal-body #id_employee')
+    const modalBodyAmount = exampleModal.querySelector('.modal-body #id_amount')
+
+    modalTitle.textContent = `Добавление выплаты ${date.toLocaleDateString()}`
+    modalBodyDate.value = date.toLocaleDateString()
+    modalBodyEmployee.value = employee
+    modalBodyAmount.value = salary
+  })
+}
+</script>
+
+{% endblock %}
+

@@ -32,3 +32,23 @@ table .custom-btn:hover {
 table .red-btn {
     background-color: lightcoral;
 }
+table .green-btn {
+    background-color: lightgreen;
+}
+table .double-color-btn{
+  background: linear-gradient(
+    to right,
+    lightcoral 0%,
+    lightcoral 50%,
+    lightgreen 50%,
+    lightgreen 100%
+  );
+}
+table.table.describe_table tr td:nth-last-child(2), table.table.describe_table tr td:last-child {
+    background: lightpink;
+    font-weight: bold;
+}
+table.table.describe_table tbody tr:last-child {
+    background: lightpink;
+    font-weight: bold;
+}

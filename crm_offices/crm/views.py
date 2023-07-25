@@ -4,7 +4,7 @@ from django.urls import reverse_lazy
 from django.views.generic import ListView
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
-from .forms import UserLoginForm, AddRentPaymentForm, AddExpenseForm, AddEmployeeForm, AddOfficeForm, AddFineForm
+from .forms import *
 from django.contrib import messages
 from crm_offices.settings import logger
 from .models import *
@@ -12,6 +12,9 @@ from datetime import datetime, date
 from crm_offices.utils import get_office, get_year, months, months_to_digit
 from django.views.generic.edit import FormMixin
 from calendar import monthrange
+import copy
+import json
+import pandas as pd
 
 
 @login_required
@@ -67,6 +70,67 @@ def office_page(request, slug):
     context = {
         'title': office.name
     }
+    current_year = get_year(request.session)
+    expenses = Expenses.objects.filter(date__year=current_year, office=office)
+    fines = Fines.objects.filter(date__year=current_year, employee__office=office)
+    salaries = Salaries.objects.filter(date__year=current_year, employee__office=office)
+    results = []
+    for i in expenses:
+        results.append({
+            'date': i.date,
+            'amount': i.amount,
+            'currency': i.currency.name,
+            'category': i.expense_type.name
+        })
+    for i in fines:
+        results.append({
+            'date': i.date,
+            'amount': i.amount,
+            'currency': 'Сум',
+            'category': 'Штрафы'
+        })
+    for i in salaries:
+        results.append({
+            'date': i.date,
+            'amount': i.amount,
+            'currency': 'Сум',
+            'category': 'Зарплата'
+        })
+    logger.info(f'RESULTS - {results}')
+    with open('../expenses.json', 'w') as file:
+        json.dump(results, file, indent=4, default=str)
+    if results:
+        df = pd.DataFrame.from_dict(results)
+        df['date'] = pd.to_datetime(df['date'])
+        df['month'] = pd.DatetimeIndex(df['date']).month
+        group_data = df.groupby(['month', 'category', 'currency'], as_index=False)['amount'].sum()
+        columns = ['Месяц', 'Аренда (Сум)', 'Аренда ($)', 'Коммунальные платежи', 'Иные расходы', 'Зарплата', 'Штрафы']
+        result_df = pd.DataFrame(columns=columns)
+        for i in range(1, 13):
+            result_df.loc[len(result_df.index)] = [i, 0, 0, 0, 0, 0, 0]
+        result_df = result_df.set_index('Месяц')
+        for i, row in group_data.iterrows():
+            month = row['month']
+            if row["category"] == 'Аренда' and row["currency"] == 'Доллар США':
+                category = 'Аренда ($)'
+            elif row["category"] == 'Аренда' and row["currency"] == 'Сум':
+                category = 'Аренда (Сум)'
+            else:
+                category = row["category"]
+            amount = row['amount']
+            result_df.loc[month, category] = amount
+        result_df['Итого (Сум)'] = result_df[
+            ['Аренда (Сум)', 'Коммунальные платежи', 'Иные расходы', 'Зарплата', 'Штрафы']].sum(1)
+        result_df['Итого ($)'] = result_df[['Аренда ($)']].sum(1)
+        result_df.loc['Total', :] = result_df.sum(axis=0)
+        result_df = result_df.reset_index()
+        result_df['Месяц'][:12] = result_df['Месяц'][:12].apply(lambda x: months[int(x)])
+        # for i in result_df.columns[1:]:
+        #     result_df[i] = result_df[i].astype(int)
+        result_table = result_df.values.tolist()
+    else:
+        result_table = None
+    context['result_table'] = result_table
     return render(request, 'crm/office.html', context)
 
 
@@ -200,15 +264,13 @@ def fines_page(request):
             messages.error(request, 'Допущена ошибка. Проверьте форму')
             return render(request, 'crm/expenses_page.html', context)
 
-    # context['result_table'] = get_expenses(current_office, current_year, data["name"])
-    #TODO сделать словарь со штрафами для каждого сотрудника и вывести их на странице в виде аккордеона
-    #TODO в форму передавать только сотрудников выбранного оффиса
-
-    all_fines = Fines.objects.filter(employee__in=current_employees).order_by('date')
+    full_all_fines = Fines.objects.filter(employee__in=current_employees).order_by('date')
+    logger.info(f'FULL ALL FINES - {full_all_fines}')
+    all_fines = full_all_fines.filter(date__year=current_year)
+    logger.info(f'ALL FINES - {all_fines}')
     result_dict = {}
     for month_number, month_name in months.items():
         days = monthrange(current_year, month_number)
-        first_day = days[0]
         weekdays = []
         all_days = []
         for day in range(1, days[1] + 1):
@@ -247,6 +309,107 @@ def fines_page(request):
     context['year'] = current_year
     context['all_fines'] = all_fines
     return render(request, 'crm/fines_page.html', context)
+
+
+def salary_page(request):
+    context = {
+        'title': 'Зарплата'
+    }
+    current_office = get_office(request.session)
+    current_year = get_year(request.session)
+    current_employees = Employees.objects.filter(office=Offices.objects.get(slug=current_office)).order_by('name')
+    employees_choices = [(i.id, i.name) for i in current_employees]
+    if request.method == 'POST':
+        post = request.POST.copy()
+        logger.info(f'POST  - {post}')
+        request.POST = post
+        form = AddSalaryForm(request.POST, employees_choices=employees_choices)
+        if form.is_valid():
+            form_data = form.cleaned_data
+            logger.info(f'FORM DATA - {form_data}')
+            new_fine = Salaries.objects.create(
+                date=form_data['date'],
+                amount=form_data['amount'],
+                employee=form_data['employee'],
+                comment=form_data['comment']
+            )
+            logger.info(f'NEW SALARY PAYMENT WAS CREATED - {new_fine}')
+            messages.success(request, f'Новая выплата добавлена')
+        else:
+            logger.info(f'FORM ERRORS - {form.errors}')
+            context['form'] = form
+            messages.error(request, 'Допущена ошибка. Проверьте форму')
+            return render(request, 'crm/expenses_page.html', context)
+    full_all_fines = Fines.objects.filter(employee__in=current_employees).order_by('date')
+    logger.info(f'FULL ALL FINES - {full_all_fines}')
+    all_fines = full_all_fines.filter(date__year=current_year)
+    logger.info(f'ALL FINES - {all_fines}')
+    full_all_salary = Salaries.objects.filter(employee__in=current_employees).order_by('date')
+    logger.info(f'FULL ALL SALARY - {full_all_salary}')
+    all_salary = full_all_salary.filter(date__year=current_year)
+    logger.info(f'ALL SALARY - {all_salary}')
+    result_dict = {}
+    for month_number, month_name in months.items():
+        days = monthrange(current_year, month_number)
+        weekdays = []
+        all_days = []
+        for day in range(1, days[1] + 1):
+            weekdays.append(date(current_year, month_number, day).weekday())
+            all_days.append(day)
+        employees_rows = {}
+        for employee in current_employees:
+            employees_rows[employee.id] = [employee] + [['-', {'fines': [], 'salary': []}][:]] * days[1]
+            logger.info(f'employees_rows - {employees_rows[employee.id]}')
+        result_month = {'weekdays': weekdays, 'all_days': all_days, 'employees_rows': employees_rows,
+                        'month_number': month_number}
+        result_dict[month_name] = result_month
+        logger.info(f'{month_name} - {weekdays} / {all_days}')
+    for fine in all_fines:
+        fine_month = fine.date.month
+        fine_day = fine.date.day
+        fine_employee = fine.employee
+        new_fine_data = copy.deepcopy(result_dict[months[fine_month]]['employees_rows'][fine_employee.id][fine_day][1])
+        logger.info(f'CURR FINE DATA = {new_fine_data}')
+        new_fine_data['fines'].append(f'{fine.amount} / {fine.comment}')
+        # if new_fine_data['fines']:
+        #     new_fine_data['fines'].append(f'{fine.amount} / {fine.comment}')
+        # else:
+        #     new_fine_data = current_fine_data
+        #     new_fine_data['fines']
+        result_dict[months[fine_month]]['employees_rows'][fine_employee.id][fine_day] = ['*', new_fine_data]
+        logger.info(f'{result_dict[months[fine_month]]["employees_rows"][fine_employee.id]}')
+    for salary in all_salary:
+        salary_month = salary.date.month
+        salary_day = salary.date.day
+        salary_employee = salary.employee
+        current_salary_label, new_salary_data = copy.deepcopy(result_dict[months[salary_month]]['employees_rows'][salary_employee.id][salary_day])
+        new_salary_data['salary'].append(f'{salary.amount} / {salary.comment}')
+        # if current_salary_data != '-':
+        #     new_salary_data = current_salary_data['salary'].append(f'{salary.amount} / {salary.comment}')
+        # else:
+        #     new_salary_data = {'salary': [f'{salary.amount} / {salary.comment}']}
+        if current_salary_label != '-':
+            new_salary_label = current_salary_label + ' $'
+        else:
+            new_salary_label = '$'
+        result_dict[months[salary_month]]['employees_rows'][salary_employee.id][salary_day] = [new_salary_label, new_salary_data]
+        logger.info(f'{result_dict[months[salary_month]]["employees_rows"][salary_employee.id]}')
+    today_date = date.today()
+    today = {
+        'year': today_date.year,
+        'month': today_date.month - 1,
+        'day': today_date.day
+    }
+    context['today'] = today
+    context['result_dict'] = result_dict
+    context['results'] = Fines.objects.filter(date__year=current_year,
+                                              employee__office=Offices.objects.get(slug=current_office))
+    context['form'] = AddSalaryForm(
+        employees_choices=employees_choices
+    )
+    context['year'] = current_year
+    context['all_fines'] = all_fines
+    return render(request, 'crm/salary_page.html', context)
 
 
 class OfficesList(FormMixin, ListView):

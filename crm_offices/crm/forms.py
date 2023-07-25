@@ -2,8 +2,7 @@ import datetime
 from crm_offices.settings import logger
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django import forms
-from .models import Currency, Employees, Offices, Fines
-
+from .models import Currency, Employees, Offices, Fines, Salaries
 
 
 class UserLoginForm(AuthenticationForm):
@@ -67,7 +66,30 @@ class AddFineForm(forms.ModelForm):
 
         self.fields['employee'] = forms.ChoiceField(
                 label='Сотрудник',
-                choices=employees_choices, required=False
+                choices=employees_choices, required=True
+            )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        logger.info(f'CLEAN DATA - {cleaned_data}')
+        employee_id = cleaned_data['employee']
+        cleaned_data['employee'] = Employees.objects.get(id=int(employee_id))
+        logger.info(f'FINAL CLEAN DATA - {cleaned_data}')
+        return cleaned_data
+
+
+class AddSalaryForm(forms.ModelForm):
+    class Meta:
+        model = Salaries
+        fields = ['date', 'amount', 'employee', 'comment']
+
+    def __init__(self, *args, **kwargs):
+        employees_choices = kwargs.pop('employees_choices')
+        super().__init__(*args, **kwargs)
+
+        self.fields['employee'] = forms.ChoiceField(
+                label='Сотрудник',
+                choices=employees_choices, required=True
             )
 
     def clean(self):

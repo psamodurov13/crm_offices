@@ -4,4 +4,32 @@
 
 {% block content %}
   <h1>{{ title }}</h1>
+{% if result_table %}
+  <table class="table describe_table">
+    <thead>
+      <tr>
+        <th>Месяц</th>
+        <th>Аренда (Сум)</th>
+        <th>Аренда ($)</th>
+        <th>Коммунальные платежи</th>
+        <th>Иные расходы</th>
+        <th>Зарплата</th>
+        <th>Штрафы</th>
+        <th>Итого (Сум)</th>
+        <th>Итого ($)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in result_table %}
+        <tr>
+          {% for cell in row %}
+          <td>{{ cell }}</td>
+          {% endfor %}
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+<p>Расходов еще не было</p>
+{% endif %}
 {% endblock %}

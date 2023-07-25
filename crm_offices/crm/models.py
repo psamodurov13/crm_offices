@@ -40,11 +40,22 @@ class Fines(CustomStr, models.Model):
     date = models.DateField(verbose_name='Дата штрафа')
     amount = models.IntegerField(verbose_name='Сумма штрафа')
     employee = models.ForeignKey(Employees, verbose_name='Сотрудник', on_delete=models.CASCADE, related_name='fines')
-    comment = models.TextField(verbose_name='Комментарий')
+    comment = models.TextField(verbose_name='Комментарий', blank=True)
 
     class Meta:
         verbose_name = 'Штраф'
         verbose_name_plural = 'Штрафы'
+
+
+class Salaries(CustomStr, models.Model):
+    date = models.DateField(verbose_name='Дата выплаты')
+    amount = models.IntegerField(verbose_name='Сумма выплаты')
+    employee = models.ForeignKey(Employees, verbose_name='Сотрудник', on_delete=models.CASCADE, related_name='salaries')
+    comment = models.TextField(verbose_name='Комментарий', blank=True)
+
+    class Meta:
+        verbose_name = 'Зарплата'
+        verbose_name_plural = 'Зарплаты'
 
 
 class ExpensesTypes(CustomStr, models.Model):
