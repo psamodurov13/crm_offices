@@ -15,6 +15,12 @@ from calendar import monthrange
 import copy
 import json
 import pandas as pd
+from django.contrib.auth.mixins import UserPassesTestMixin
+
+
+class StaffMemberRequiredMixin(UserPassesTestMixin):
+    def test_func(self):
+        return self.request.user.is_staff
 
 
 @login_required
@@ -25,6 +31,70 @@ def index(request):
     # return render(request, 'crm/home.html', context)
     logger.info(f'REQUEST SESSION {request.session.__dict__}')
     current_year = datetime.today().year
+    expenses = Expenses.objects.filter(date__year=current_year)
+    fines = Fines.objects.filter(date__year=current_year)
+    salaries = Salaries.objects.filter(date__year=current_year)
+    results = []
+    for i in expenses:
+        results.append({
+            'date': i.date,
+            'amount': i.amount,
+            'currency': i.currency.name,
+            'category': i.expense_type.name,
+            'office': i.office.name
+        })
+    for i in fines:
+        results.append({
+            'date': i.date,
+            'amount': i.amount * -1,
+            'currency': 'Сум',
+            'category': 'Штрафы',
+            'office': i.employee.office.name
+        })
+    for i in salaries:
+        results.append({
+            'date': i.date,
+            'amount': i.amount,
+            'currency': 'Сум',
+            'category': 'Зарплата',
+            'office': i.employee.office.name
+        })
+    logger.info(f'RESULTS - {results}')
+    with open('../expenses.json', 'w') as file:
+        json.dump(results, file, indent=4, default=str)
+    if results:
+        df = pd.DataFrame.from_dict(results)
+        df['date'] = pd.to_datetime(df['date'])
+        df['month'] = pd.DatetimeIndex(df['date']).month
+        group_data = df.groupby(['month', 'office', 'currency'], as_index=False)['amount'].sum()
+        columns = ['Пункт']
+        for i in range(1, 13):
+            columns.extend([f'{i} (Сум)', f'{i} ($)'])
+        result_df = pd.DataFrame(columns=columns)
+        for i in df['office'].unique():
+            result_df.loc[len(result_df.index)] = [i, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                   0]
+        result_df = result_df.set_index('Пункт')
+        for i, row in group_data.iterrows():
+            month = row['month']
+            if row["currency"] == 'Доллар США':
+                currency = ' ($)'
+            elif row["currency"] == 'Сум':
+                currency = ' (Сум)'
+            office = row['office']
+            amount = row['amount']
+            result_df.loc[office, f'{month}{currency}'] = amount
+        result_df['Итого (Сум)'] = result_df[[i for i in result_df.columns if '(Сум)' in i]].sum(1)
+        result_df['Итого ($)'] = result_df[[i for i in result_df.columns if '($)' in i]].sum(1)
+        result_df.loc['Total', :] = result_df.sum(axis=0)
+        result_df = result_df.reset_index()
+        for i in result_df.columns[1:]:
+            result_df[i] = result_df[i].astype(int)
+        result_table = result_df.values.tolist()
+    else:
+        result_table = None
+    context['result_table'] = result_table
+    context['months'] = [i for i in months.values()]
     return render(request, 'crm/home.html', context)
 
 
@@ -37,8 +107,10 @@ def activate_year(request, year):
 
 def login_page(request):
     login_form = UserLoginForm()
+    register_form = UserRegisterForm()
     context = {
         'login_form': login_form,
+        'register_form': register_form
     }
     return render(request, 'crm/login.html', context)
 
@@ -52,8 +124,29 @@ def user_login(request):
             login(request, user)
             messages.success(request, 'Вход выполнен')
         else:
+            register_form = UserRegisterForm()
             messages.error(request, 'Вход не выполнен, проверьте форму')
-            return render(request, 'crm/login.html', {'login_form': login_form})
+            return render(request, 'crm/login.html', {'login_form': login_form, 'register_form': register_form})
+    if request.user.is_superuser:
+        return redirect('home')
+    else:
+        if Offices.objects.filter(admin_user=request.user):
+            first_office = Offices.objects.filter(admin_user=request.user).first()
+            return redirect('offices', slug=first_office.slug)
+        else:
+            return redirect('home')
+
+def user_register(request):
+    if request.method == 'POST' and 'register-button' in request.POST:
+        register_form = UserRegisterForm(data=request.POST)
+        if register_form.is_valid():
+            user = register_form.save()
+            login(request, user)
+            messages.success(request, 'Вы успешно зарегистрировались. После модерации Вы получите доступ к функционалу')
+        else:
+            login_form = UserLoginForm()
+            messages.error(request, 'Вы не зарегистрировались. Проверьте форму')
+            return render(request, 'crm/login.html', {'login_form': login_form, 'register_form': register_form})
     return redirect('home')
 
 
@@ -67,6 +160,8 @@ def office_page(request, slug):
     request.session['office'] = slug
     logger.info(f'REQUEST {request.path}')
     office = Offices.objects.get(slug=slug)
+    if office.admin_user != request.user:
+        return redirect('home')
     context = {
         'title': office.name
     }
@@ -85,7 +180,7 @@ def office_page(request, slug):
     for i in fines:
         results.append({
             'date': i.date,
-            'amount': i.amount,
+            'amount': i.amount * -1,
             'currency': 'Сум',
             'category': 'Штрафы'
         })
@@ -122,11 +217,11 @@ def office_page(request, slug):
         result_df['Итого (Сум)'] = result_df[
             ['Аренда (Сум)', 'Коммунальные платежи', 'Иные расходы', 'Зарплата', 'Штрафы']].sum(1)
         result_df['Итого ($)'] = result_df[['Аренда ($)']].sum(1)
-        result_df.loc['Total', :] = result_df.sum(axis=0)
+        result_df.loc['Итого за год', :] = result_df.sum(axis=0)
         result_df = result_df.reset_index()
         result_df['Месяц'][:12] = result_df['Месяц'][:12].apply(lambda x: months[int(x)])
-        # for i in result_df.columns[1:]:
-        #     result_df[i] = result_df[i].astype(int)
+        for i in result_df.columns[1:]:
+            result_df[i] = result_df[i].astype(int)
         result_table = result_df.values.tolist()
     else:
         result_table = None
@@ -154,9 +249,12 @@ def get_expenses(office, year, expense_type):
 
 def rent_page(request):
     context = {
-        'title': 'Rent page'
+        'title': 'Расходы по аренде'
     }
     current_office = get_office(request.session)
+    office = Offices.objects.get(slug=current_office)
+    if office.admin_user != request.user:
+        return redirect('home')
     current_year = get_year(request.session)
     if request.method == 'POST':
         post = request.POST.copy()
@@ -190,13 +288,13 @@ def expenses_page(request):
     logger.info(f'REQUEST {request.path}')
     if request.path == '/public_services/':
         data = {
-            'title': 'Public Services',
+            'title': 'Коммунальные платежи',
             'name': 'Коммунальные платежи',
             'singular_name': 'коммунальный платеж'
         }
     elif request.path == '/other_expenses/':
         data = {
-            'title': 'Other Expenses',
+            'title': 'Иные расходы',
             'name': 'Иные расходы',
             'singular_name': 'иной платеж'
         }
@@ -204,6 +302,9 @@ def expenses_page(request):
         'title': data["title"]
     }
     current_office = get_office(request.session)
+    office = Offices.objects.get(slug=current_office)
+    if office.admin_user != request.user:
+        return redirect('home')
     current_year = get_year(request.session)
     if request.method == 'POST':
         post = request.POST.copy()
@@ -239,6 +340,9 @@ def fines_page(request):
         'title': 'Штрафы'
     }
     current_office = get_office(request.session)
+    office = Offices.objects.get(slug=current_office)
+    if office.admin_user != request.user:
+        return redirect('home')
     current_year = get_year(request.session)
     current_employees = Employees.objects.filter(office=Offices.objects.get(slug=current_office)).order_by('name')
     employees_choices = [(i.id, i.name) for i in current_employees]
@@ -316,6 +420,9 @@ def salary_page(request):
         'title': 'Зарплата'
     }
     current_office = get_office(request.session)
+    office = Offices.objects.get(slug=current_office)
+    if office.admin_user != request.user:
+        return redirect('home')
     current_year = get_year(request.session)
     current_employees = Employees.objects.filter(office=Offices.objects.get(slug=current_office)).order_by('name')
     employees_choices = [(i.id, i.name) for i in current_employees]
@@ -388,7 +495,7 @@ def salary_page(request):
         #     new_salary_data = current_salary_data['salary'].append(f'{salary.amount} / {salary.comment}')
         # else:
         #     new_salary_data = {'salary': [f'{salary.amount} / {salary.comment}']}
-        if current_salary_label != '-':
+        if current_salary_label not in ['-', '$']:
             new_salary_label = current_salary_label + ' $'
         else:
             new_salary_label = '$'
@@ -412,16 +519,17 @@ def salary_page(request):
     return render(request, 'crm/salary_page.html', context)
 
 
-class OfficesList(FormMixin, ListView):
+class OfficesList(StaffMemberRequiredMixin, FormMixin, ListView):
     model = Offices
     form_class = AddOfficeForm
     paginate_by = 20
     template_name = 'crm/offices_list.html'
     context_object_name = 'offices'
     ordering = 'id'
+    success_url = '/offices/'
 
-    def get_success_url(self, **kwargs):
-        return redirect('offices_list')
+    # def get_success_url(self, **kwargs):
+    #     return redirect('offices_list')
 
     def post(self, request, *args, **kwargs):
         form = self.get_form()

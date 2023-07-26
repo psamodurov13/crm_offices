@@ -45,7 +45,7 @@
               {% for cell in employee_row %}
                 <th>
                   {% if forloop.counter != 1 %}
-                  <button class="custom-btn {% if cell.0 == '*' %}red-btn{% elif cell.0 == '$' %}green-btn{% elif cell.0 == '* $' %}double-color-btn{% endif %}" data-bs-toggle="modal" data-bs-target="#add_payment_modal" data-bs-year="{{ year }}" data-bs-month="{{ month_data.month_number|add:'-1' }}" data-bs-day="{{ forloop.counter|add:'-1' }}" data-bs-employee="{{ employee_id }}" data-bs-amount="{{ employee_row.0.salary }}" {% if cell.1.fines or cell.1.salary %}data-bs-toggle2="popover" data-bs-html="true" data-bs-trigger="hover focus" data-bs-content="
+                  <button class="custom-btn {% if cell.0 == '*' %}red-btn{% elif cell.0 == '$' %}green-btn{% elif cell.0 == '* $' %}double-color-btn{% endif %}" data-bs-toggle="modal" {% if request.user.is_superuser %}data-bs-target="#add_payment_modal"{% endif %} data-bs-year="{{ year }}" data-bs-month="{{ month_data.month_number|add:'-1' }}" data-bs-day="{{ forloop.counter|add:'-1' }}" data-bs-employee="{{ employee_id }}" data-bs-amount="{{ employee_row.0.salary }}" {% if cell.1.fines or cell.1.salary %}data-bs-toggle2="popover" data-bs-html="true" data-bs-trigger="hover focus" data-bs-content="
 {% if cell.1.fines %}
 <p>Штрафы:</p>
 {% for fine in cell.1.fines %}
@@ -96,7 +96,7 @@
 
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
         {% if not request.user.is_superuser %}
         <button type="submit" class="btn btn-lg btn-primary">Добавить</button>
         {% else %}

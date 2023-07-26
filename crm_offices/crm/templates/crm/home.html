@@ -4,4 +4,42 @@
 
 {% block content %}
     <h1>{{ title }}</h1>
+{% if request.user.is_superuser %}
+  {% if result_table %}
+  <div class="overflow-scroll">
+    <table class="table describe_table text-center">
+      <thead>
+        <tr>
+          <th rowspan="2"  style="min-width: 150px;">Пункт</th>
+          {% for month in months %}
+          <th colspan="2">{{ month }}</th>
+          {% endfor %}
+          <th colspan="2">Итого</th>
+        </tr>
+        <tr>
+          {% for month in months %}
+          <th style="min-width: 80px;">C</th>
+          <th style="min-width: 80px;">$</th>
+          {% endfor %}
+          <th style="min-width: 80px;">C</th>
+          <th style="min-width: 80px;">$</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in result_table %}
+          <tr>
+            {% for cell in row %}
+            <td>{{ cell }}</td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p>Расходов еще не было</p>
+  {% endif %}
+{% else %}
+<p>Недостаточно прав</p>
+{% endif %}
 {% endblock %}
