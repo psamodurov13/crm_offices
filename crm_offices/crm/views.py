@@ -160,7 +160,7 @@ def office_page(request, slug):
     request.session['office'] = slug
     logger.info(f'REQUEST {request.path}')
     office = Offices.objects.get(slug=slug)
-    if office.admin_user != request.user:
+    if office.admin_user != request.user and not request.user.is_superuser:
         return redirect('home')
     context = {
         'title': office.name
@@ -253,7 +253,7 @@ def rent_page(request):
     }
     current_office = get_office(request.session)
     office = Offices.objects.get(slug=current_office)
-    if office.admin_user != request.user:
+    if office.admin_user != request.user and not request.user.is_superuser:
         return redirect('home')
     current_year = get_year(request.session)
     if request.method == 'POST':
@@ -303,7 +303,7 @@ def expenses_page(request):
     }
     current_office = get_office(request.session)
     office = Offices.objects.get(slug=current_office)
-    if office.admin_user != request.user:
+    if office.admin_user != request.user and not request.user.is_superuser:
         return redirect('home')
     current_year = get_year(request.session)
     if request.method == 'POST':
@@ -341,7 +341,7 @@ def fines_page(request):
     }
     current_office = get_office(request.session)
     office = Offices.objects.get(slug=current_office)
-    if office.admin_user != request.user:
+    if office.admin_user != request.user and not request.user.is_superuser:
         return redirect('home')
     current_year = get_year(request.session)
     current_employees = Employees.objects.filter(office=Offices.objects.get(slug=current_office)).order_by('name')
@@ -421,7 +421,7 @@ def salary_page(request):
     }
     current_office = get_office(request.session)
     office = Offices.objects.get(slug=current_office)
-    if office.admin_user != request.user:
+    if office.admin_user != request.user and not request.user.is_superuser:
         return redirect('home')
     current_year = get_year(request.session)
     current_employees = Employees.objects.filter(office=Offices.objects.get(slug=current_office)).order_by('name')
