@@ -16,6 +16,7 @@ import copy
 import json
 import pandas as pd
 from django.contrib.auth.mixins import UserPassesTestMixin
+from transliterate import slugify
 
 
 class StaffMemberRequiredMixin(UserPassesTestMixin):
@@ -26,7 +27,7 @@ class StaffMemberRequiredMixin(UserPassesTestMixin):
 @login_required
 def index(request):
     context = {
-        'title': 'Home page'
+        'title': 'Сводная таблица по пунктам'
     }
     # return render(request, 'crm/home.html', context)
     logger.info(f'REQUEST SESSION {request.session.__dict__}')
@@ -86,7 +87,7 @@ def index(request):
             result_df.loc[office, f'{month}{currency}'] = amount
         result_df['Итого (Сум)'] = result_df[[i for i in result_df.columns if '(Сум)' in i]].sum(1)
         result_df['Итого ($)'] = result_df[[i for i in result_df.columns if '($)' in i]].sum(1)
-        result_df.loc['Total', :] = result_df.sum(axis=0)
+        result_df.loc['Итого', :] = result_df.sum(axis=0)
         result_df = result_df.reset_index()
         for i in result_df.columns[1:]:
             result_df[i] = result_df[i].astype(int)
@@ -426,7 +427,7 @@ def salary_page(request):
     current_year = get_year(request.session)
     current_employees = Employees.objects.filter(office=Offices.objects.get(slug=current_office)).order_by('name')
     employees_choices = [(i.id, i.name) for i in current_employees]
-    if request.method == 'POST':
+    if request.method == 'POST' and 'single-date-button' in request.POST:
         post = request.POST.copy()
         logger.info(f'POST  - {post}')
         request.POST = post
@@ -447,6 +448,31 @@ def salary_page(request):
             context['form'] = form
             messages.error(request, 'Допущена ошибка. Проверьте форму')
             return render(request, 'crm/expenses_page.html', context)
+    if request.method == 'POST' and 'multiple-date-button' in request.POST:
+        post = request.POST.copy()
+        logger.info(f'POST  - {post}')
+        request.POST = post
+        form = AddSalaryMultipleForm(request.POST)
+        if form.is_valid():
+            form_data = form.cleaned_data
+            logger.info(f'FORM DATA - {form_data}')
+            for employee_id, date_list in form_data['date_employee'].items():
+                employee = Employees.objects.get(id=employee_id)
+                for date_dict in date_list:
+                    salary_date = date(int(date_dict['year']), int(date_dict['month']), int(date_dict['day']))
+                    new_fine = Salaries.objects.create(
+                        date=salary_date,
+                        amount=form_data['amount'],
+                        employee=employee,
+                        comment=form_data['comment']
+                    )
+                    logger.info(f'NEW SALARY PAYMENT WAS CREATED - {new_fine}')
+            messages.success(request, f'Новые выплаты добавлены')
+        else:
+            logger.info(f'FORM ERRORS - {form.errors}')
+            context['form'] = form
+            messages.error(request, 'Допущена ошибка. Проверьте форму')
+            return render(request, 'otk/schedule_page.html', context)
     full_all_fines = Fines.objects.filter(employee__in=current_employees).order_by('date')
     logger.info(f'FULL ALL FINES - {full_all_fines}')
     all_fines = full_all_fines.filter(date__year=current_year)
@@ -466,6 +492,7 @@ def salary_page(request):
         employees_rows = {}
         for employee in current_employees:
             employees_rows[employee.id] = [employee] + [['-', {'fines': [], 'salary': []}][:]] * days[1]
+            employees_rows[employee.id].extend([0, 0])
             logger.info(f'employees_rows - {employees_rows[employee.id]}')
         result_month = {'weekdays': weekdays, 'all_days': all_days, 'employees_rows': employees_rows,
                         'month_number': month_number}
@@ -478,12 +505,14 @@ def salary_page(request):
         new_fine_data = copy.deepcopy(result_dict[months[fine_month]]['employees_rows'][fine_employee.id][fine_day][1])
         logger.info(f'CURR FINE DATA = {new_fine_data}')
         new_fine_data['fines'].append(f'{fine.amount} / {fine.comment}')
+
         # if new_fine_data['fines']:
         #     new_fine_data['fines'].append(f'{fine.amount} / {fine.comment}')
         # else:
         #     new_fine_data = current_fine_data
         #     new_fine_data['fines']
         result_dict[months[fine_month]]['employees_rows'][fine_employee.id][fine_day] = ['*', new_fine_data]
+        result_dict[months[fine_month]]['employees_rows'][fine_employee.id][-1] += fine.amount
         logger.info(f'{result_dict[months[fine_month]]["employees_rows"][fine_employee.id]}')
     for salary in all_salary:
         salary_month = salary.date.month
@@ -495,11 +524,15 @@ def salary_page(request):
         #     new_salary_data = current_salary_data['salary'].append(f'{salary.amount} / {salary.comment}')
         # else:
         #     new_salary_data = {'salary': [f'{salary.amount} / {salary.comment}']}
-        if current_salary_label not in ['-', '$']:
+        if current_salary_label not in ['-', '$', '* $']:
             new_salary_label = current_salary_label + ' $'
+        elif current_salary_label == '* $':
+            new_salary_label = current_salary_label
+            logger.info('not change')
         else:
             new_salary_label = '$'
         result_dict[months[salary_month]]['employees_rows'][salary_employee.id][salary_day] = [new_salary_label, new_salary_data]
+        result_dict[months[salary_month]]['employees_rows'][salary_employee.id][-2] += salary.amount
         logger.info(f'{result_dict[months[salary_month]]["employees_rows"][salary_employee.id]}')
     today_date = date.today()
     today = {
@@ -514,6 +547,7 @@ def salary_page(request):
     context['form'] = AddSalaryForm(
         employees_choices=employees_choices
     )
+    context['form_multiple'] = AddSalaryMultipleForm()
     context['year'] = current_year
     context['all_fines'] = all_fines
     return render(request, 'crm/salary_page.html', context)
@@ -539,7 +573,16 @@ class OfficesList(StaffMemberRequiredMixin, FormMixin, ListView):
             return self.form_invalid(form)
 
     def form_valid(self, form):
-        self.object = form.save(commit=False)
+        logger.info(f'Form {form}')
+        data = form.cleaned_data
+        logger.info(f'data {data}')
+        name = data['name']
+        slug = slugify(name, language_code='ru')
+        if slug in [i.slug for i in Offices.objects.all()]:
+            slug += f'-{str(Offices.objects.all().order_by("id").last().id) + "1"}'
+        logger.info(f'SLUG - {slug}')
+        data['slug'] = slug
+        self.object = Offices.objects.create(**data)
         self.object.save()
         messages.success(self.request, f'Пункт добавлен')
         return HttpResponseRedirect(self.get_success_url())

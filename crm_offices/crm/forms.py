@@ -64,7 +64,19 @@ class AddEmployeeForm(forms.ModelForm):
 class AddOfficeForm(forms.ModelForm):
     class Meta:
         model = Offices
-        fields = ['name', 'slug', 'address', 'phone', 'admin_user']
+        fields = ['name', 'address', 'admin_user']
+
+    # def clean(self):
+    #     cleaned_data = super().clean()
+    #     logger.info(f'CLEAN DATA - {cleaned_data}')
+    #     name = cleaned_data['name']
+    #     slug = slugify(name)
+    #     if slug in [i.slug for i in Offices.objects.all()]:
+    #         slug += f'-{str(Offices.objects.all().order_by("id").last() + 1)}'
+    #     logger.info(f'SLUG - {slug}')
+    #     cleaned_data['slug'] = slug
+    #     logger.info(f'FINAL CLEAN DATA - {cleaned_data}')
+    #     return cleaned_data
 
 
 class AddFineForm(forms.ModelForm):
@@ -111,3 +123,9 @@ class AddSalaryForm(forms.ModelForm):
         cleaned_data['employee'] = Employees.objects.get(id=int(employee_id))
         logger.info(f'FINAL CLEAN DATA - {cleaned_data}')
         return cleaned_data
+
+
+class AddSalaryMultipleForm(forms.Form):
+    date_employee = forms.JSONField(label='Данные', widget=forms.HiddenInput())
+    amount = forms.IntegerField(label='Зарплата', widget=forms.NumberInput())
+    comment = forms.Field(label='Комментарий', widget=forms.TextInput())

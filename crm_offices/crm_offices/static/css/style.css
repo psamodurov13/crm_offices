@@ -1,6 +1,6 @@
 .content {
 min-height: calc(100vh - 193px);
-margin-top: 56px;
+/* margin-top: 56px; */
 }
 
 .alert-success {
@@ -44,11 +44,28 @@ table .double-color-btn{
     lightgreen 100%
   );
 }
-table.table.describe_table tr td:nth-last-child(2), table.table.describe_table tr td:last-child {
+table.table.describe_table tr td:nth-last-child(2), table.table.describe_table tr td:last-child,
+table.table.describe_table tr th:nth-last-child(2), table.table.describe_table tr th:last-child {
     background: lightpink;
     font-weight: bold;
 }
-table.table.describe_table tbody tr:last-child {
-    background: lightpink;
+table.table.describe_table tbody tr:last-child td {
+    background: lightpink !important;
     font-weight: bold;
+}
+table tr td.gray-background, table tr th.gray-background {
+background-color: #ededed;
+}
+
+table th {
+position: relative;
+}
+.custom-popover-button, .custom-popover-all-button {
+position: absolute;
+left: 30px;
+bottom: -40px;
+z-index: 2;
+background: white;
+border: 1px solid lightgray;
+border-radius: 7px;
 }

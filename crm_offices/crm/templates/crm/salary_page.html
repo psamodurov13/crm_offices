@@ -30,19 +30,26 @@
               <col></col>
               {% endif %}
             {% endfor %}
+            <col></col>
+            <col></col>
           </colgroup>
           <thead>
             <tr>
               <th style="min-width: 200px;">ФИО</th>
               {% for day in month_data.all_days %}
-                <th style="min-width: 50px;">{{ day }}</th>
+                <th style="min-width: 50px;">
+                  <div>{{ day }}</div>
+                  <a data-bs-day="{{day}}" data-bs-month="{{ month_data.month_number|add:'-1' }}" data-bs-year="{{ year }}" class="select-all-button"><i class="fa fa-check-square-o" aria-hidden="true"></i></a>
+                </th>
               {% endfor %}
+              <th style="min-width: 200px;">Заработано</th>
+              <th style="min-width: 200px;">Штрафы</th>
             </tr>
           </thead>
           <body>
             {% for employee_id, employee_row in month_data.employees_rows.items %}
             <tr>
-              {% for cell in employee_row %}
+              {% for cell in employee_row|slice:":-2" %}
                 <th>
                   {% if forloop.counter != 1 %}
                   <button class="custom-btn {% if cell.0 == '*' %}red-btn{% elif cell.0 == '$' %}green-btn{% elif cell.0 == '* $' %}double-color-btn{% endif %}" data-bs-toggle="modal" {% if request.user.is_superuser %}data-bs-target="#add_payment_modal"{% endif %} data-bs-year="{{ year }}" data-bs-month="{{ month_data.month_number|add:'-1' }}" data-bs-day="{{ forloop.counter|add:'-1' }}" data-bs-employee="{{ employee_id }}" data-bs-amount="{{ employee_row.0.salary }}" {% if cell.1.fines or cell.1.salary %}data-bs-toggle2="popover" data-bs-html="true" data-bs-trigger="hover focus" data-bs-content="
@@ -63,10 +70,14 @@
 "{% endif %}>
                     {{ cell.0 }}
                   </button>
+                  <input class="form-check-input checkbox_multiple" type="checkbox" data-bs-day="{{ forloop.counter|add:'-1' }}" data-bs-month="{{ month_data.month_number|add:'-1' }}" data-bs-year="{{ year }}" data-bs-amount="{{ employee_row.0.salary }}" data-bs-employee="{{ employee_id }}" id="flexCheckDefault">
                   {% else %}
                   {{ cell.name }}
                   {% endif %}
                 </th>
+              {% endfor %}
+              {% for cell in employee_row|slice:"-2:" %}
+                <th>{{ cell }}</th>
               {% endfor %}
             </tr>
             {% endfor %}
@@ -78,6 +89,31 @@
 {% endfor %}
 </div>
 
+
+<!-- Modal 2 -->
+<div class="modal fade" tabindex="-1" aria-labelledby="exampleModalLabel2" aria-hidden="true" id="schedule_multiple_modal">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="exampleModalLabel2">Зарплаты (изменение)</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="post">
+          {% csrf_token %}
+      <div class="modal-body">
+
+            {{ form_multiple|crispy }}
+
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+        <button type="submit" class="btn btn btn-primary" name="multiple-date-button">Добавить</button>
+      </div>
+      </form>
+    </div>
+  </div>
+</div>
 
 <!-- Modal -->
 <div class="modal fade" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true" id="add_payment_modal">
@@ -95,13 +131,21 @@
 
 
       </div>
+        <script>
+          $(function () {
+            $("#id_date").datetimepicker({
+              format: 'd.m.Y',
+              timepicker: false,
+              scrollMonth : false,
+              scrollDay: false,
+              scrollYear: false,
+              scrollInput : false
+            });
+          });
+        </script>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
-        {% if not request.user.is_superuser %}
-        <button type="submit" class="btn btn-lg btn-primary">Добавить</button>
-        {% else %}
-        <button type="submit" class="btn btn-primary">Добавить</button>
-        {% endif %}
+        <button type="submit" class="btn btn-primary" name="single-date-button">Добавить</button>
       </div>
       </form>
     </div>
@@ -136,6 +180,157 @@ if (exampleModal) {
     modalBodyAmount.value = salary
   })
 }
+
+
+const exampleModal2 = document.getElementById('schedule_multiple_modal')
+  if (exampleModal2) {
+    exampleModal2.addEventListener('show.bs.modal', event => {
+      // Button that triggered the modal
+      const button = event.relatedTarget
+      const all_checked = document.querySelectorAll('.checkbox_multiple[checked="true"]')
+      console.log(all_checked)
+      let json_field = {}
+      let salaries = []
+      all_checked.forEach(function(elem) {
+        const employee = elem.getAttribute('data-bs-employee')
+        const day = elem.getAttribute('data-bs-day')
+        const month = elem.getAttribute('data-bs-month')
+        const year = elem.getAttribute('data-bs-year')
+        const date = new Date(year, month, day)
+        const salary = elem.getAttribute('data-bs-amount')
+        if (!salaries.includes(salary)) {
+          salaries.push(salary)
+        }
+        console.log(salaries)
+        if (json_field[employee]) {
+          json_field[employee].push({
+            date: date.toLocaleDateString(),
+            year: year,
+            month: String(Number(month) + 1),
+            day: day,
+          })
+        } else {
+          json_field[employee] = [{
+            date: date.toLocaleDateString(),
+            year: year,
+            month: String(Number(month) + 1),
+            day: day,
+          }]
+        }
+      })
+      // Update the modal's content.
+      const modalTitle = exampleModal2.querySelector('.modal-title')
+      const modalJSONField = exampleModal2.querySelector('.modal-body #id_date_employee')
+      const modalSalaryField = exampleModal2.querySelector('.modal-body #id_amount')
+      console.log(json_field)
+
+      modalTitle.textContent = `Изменение графика`
+      modalJSONField.value = JSON.stringify(json_field)
+      console.log('res')
+      console.log(salaries)
+      console.log(salaries.length)
+      if (salaries.length === 1) {
+        modalSalaryField.value = salaries[0]
+      } else {
+        modalSalaryField.value = ''
+      }
+    })
+  }
+
+document.addEventListener('click', ({ target: t }) => {
+    const popover_to_del = t.closest('.custom-popover-button');
+    const checkboxes = document.querySelectorAll('.checkbox_multiple')
+    if (t.classList.contains('custom-popover-button') | t.classList.contains('multiple-form-button')) {
+        console.log('Нажал на кнопку')
+    } else if (t.classList.contains('checkbox_multiple')) {
+        console.log('Нажат чекбокс')
+        console.log(t)
+        const checked = t.getAttribute('checked')
+        console.log(checked)
+        const all_popovers_checkboxes = document.querySelectorAll('.custom-popover-all-button')
+            all_popovers_checkboxes.forEach(function(elem) {
+                elem.parentNode.removeChild(elem)
+            })
+        const all_popovers = document.querySelectorAll('.custom-popover-button')
+            all_popovers.forEach(function(elem) {
+                elem.parentNode.removeChild(elem)
+            })
+        if (checked === 'true') {
+            console.log('Нажат чекбокс чект')
+            t.setAttribute('checked', 'false')
+        } else {
+            console.log('Нажат чекбокс не чект')
+            t.setAttribute('checked', 'true')
+            console.log('Click on')
+            const popover = document.createElement('div')
+            popover.classList.add('custom-popover-button')
+            popover.classList.add('p-2')
+            popover.innerHTML = '<button class="btn btn-sm btn-primary multiple-form-button" data-bs-target="#schedule_multiple_modal" data-bs-toggle="modal">Продолжить</button>'
+            console.log(popover)
+            const th = t.closest('th')
+            console.log(th)
+            th.appendChild(popover)
+            console.log(th)
+        }
+    } else {
+        console.log('Нажал не на кнопку')
+        const all_popovers = document.querySelectorAll('.custom-popover-button')
+        all_popovers.forEach(function(elem) {
+            elem.parentNode.removeChild(elem)
+        })
+    }
+  });
+
+  allSelectButtons = document.querySelectorAll('.select-all-button')
+  allSelectButtons.forEach(function(element) {
+      element.addEventListener('click', () => {
+          console.log('Click on select all')
+          const day = element.getAttribute('data-bs-day')
+          const month = element.getAttribute('data-bs-month')
+          const year = element.getAttribute('data-bs-year')
+          const date = new Date(year, month, day)
+          const status = element.getAttribute('status')
+          const all_popovers = document.querySelectorAll('.custom-popover-button')
+            all_popovers.forEach(function(elem) {
+                elem.parentNode.removeChild(elem)
+            })
+          const all_popovers_checkboxes = document.querySelectorAll('.custom-popover-all-button')
+            all_popovers_checkboxes.forEach(function(elem) {
+                elem.parentNode.removeChild(elem)
+            })
+          if (status === 'true') {
+            element.setAttribute('status', 'false')
+
+          } else {
+            element.setAttribute('status', 'true')
+            const popover = document.createElement('div')
+            popover.classList.add('custom-popover-button')
+            popover.classList.add('p-2')
+            popover.innerHTML = '<div class="custom-popover-all-button p-2"><button class="btn btn-sm btn-primary multiple-form-button" data-bs-target="#schedule_multiple_modal" data-bs-toggle="modal">Продолжить</button></div>'
+            console.log(element)
+            console.log(popover)
+            element.insertAdjacentHTML('afterend', popover.innerHTML)
+          }
+
+          const dateCheckboxes = document.querySelectorAll('.checkbox_multiple')
+          dateCheckboxes.forEach(function(elem) {
+            const elem_day = elem.getAttribute('data-bs-day')
+            const elem_month = elem.getAttribute('data-bs-month')
+            const elem_year = elem.getAttribute('data-bs-year')
+            if (elem_year === year && elem_month === month && elem_day === day) {
+              if (elem.getAttribute('checked') === 'true') {
+                elem.setAttribute('checked', 'false')
+                elem.checked = false
+              } else {
+                elem.setAttribute('checked', 'true')
+                elem.checked = true
+              }
+            }
+
+          })
+
+      })
+  })
 </script>
 
 {% endblock %}

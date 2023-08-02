@@ -9,7 +9,6 @@ class Offices(CustomStr, models.Model):
     name = models.CharField(verbose_name='Название пункта')
     slug = models.SlugField(verbose_name='URL', unique=True)
     address = models.CharField(verbose_name='Адрес')
-    phone = models.CharField(verbose_name='Телефон')
     created_at = models.DateField(verbose_name='Дата добавления', auto_now=True)
     admin_user = models.ForeignKey(User, verbose_name='Администратор пункта', on_delete=models.SET_NULL, null=True,
                                    related_name='office')

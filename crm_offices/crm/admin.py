@@ -10,9 +10,9 @@ class BaseAdmin(admin.ModelAdmin):
 
 
 class OfficesAdmin(PrePopulatedSlug, BaseAdmin):
-    list_display = ('id', 'name', 'address', 'phone')
+    list_display = ('id', 'name', 'address',)
     list_display_links = ('id', 'name')
-    search_fields = ('name', 'address', 'phone')
+    search_fields = ('name', 'address',)
 
 
 class EmployeesAdmin(BaseAdmin):

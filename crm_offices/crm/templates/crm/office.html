@@ -5,16 +5,16 @@
 {% block content %}
   <h1>{{ title }}</h1>
 {% if result_table %}
-  <table class="table describe_table">
+  <table class="table table-bordered text-center describe_table">
     <thead>
       <tr>
         <th>Месяц</th>
-        <th>Аренда (Сум)</th>
-        <th>Аренда ($)</th>
+        <th class="gray-background">Аренда (Сум)</th>
+        <th class="gray-background">Аренда ($)</th>
         <th>Коммунальные платежи</th>
-        <th>Иные расходы</th>
+        <th class="gray-background">Иные расходы</th>
         <th>Зарплата</th>
-        <th>Штрафы</th>
+        <th class="gray-background">Штрафы</th>
         <th>Итого (Сум)</th>
         <th>Итого ($)</th>
       </tr>
@@ -23,7 +23,11 @@
       {% for row in result_table %}
         <tr>
           {% for cell in row %}
-          <td>{{ cell }}</td>
+          <td
+            {% if forloop.counter == 2 or forloop.counter == 3 or forloop.counter == 5 or forloop.counter == 7 %}
+            class="gray-background"
+            {% endif %}
+          >{{ cell }}</td>
           {% endfor %}
         </tr>
       {% endfor %}

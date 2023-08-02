@@ -9,7 +9,7 @@
   {% if request.user.is_superuser %}
   <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#add_payment_modal">Добавить расход</button>
   {% endif %}
-  <table class="table">
+  <table class="table table-bordered text-center my-2">
     <thead>
       <tr>
         <th>Месяц</th>
@@ -23,7 +23,7 @@
         {% if value|length > 1 %}
           {% for item in value %}
             <tr>
-              {% if forloop.counter == 1%}
+              {% if forloop.counter == 1 %}
                 <td rowspan="{{ value|length }}">{{ key }}</td>
               {% endif %}
               <td>{{ item.date }}</td>

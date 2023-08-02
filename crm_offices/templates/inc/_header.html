@@ -1,4 +1,5 @@
 {% load header_tags %}
+{% comment %}
 <nav class="navbar navbar-dark bg-dark fixed-top">
   <div class="container-fluid">
     <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasDarkNavbar" aria-controls="offcanvasDarkNavbar" aria-label="Toggle navigation">
@@ -53,12 +54,35 @@
     </div>
   </div>
 </nav>
-<div class="container content py-5">
-  {% if request.user.is_authenticated %}
-  <div class="row text-center">
-    {% get_years_buttons request %}
-    {% if request.session.office %}
-      {% get_sub_menu request %}
-    {% endif %}
+{% endcomment %}
+<div class="container">
+  <div class="row py-3">
+  <div class="sidebar-menu col-2">
+    <div class="list-group">
+      <a href="{% url 'home' %}" class="list-group-item list-group-item-action {% if request.path == '/' %}active{% endif %}" aria-current="true">
+        Главная
+      </a>
+      {% if request.user.is_superuser %}
+      <a href="{% url 'offices_list' %}" class="list-group-item list-group-item-action {% if request.path == '/offices/' %}active{% endif %}">Все пункты</a>
+      {% endif %}
+      <hr>
+      {% get_offices request %}
+      <hr>
+      {% if request.user.is_authenticated %}
+      <a href="{% url 'logout' %}" class="list-group-item list-group-item-action">Выйти</a>
+      {% else %}
+      <a href="{% url 'home' %}" class="list-group-item list-group-item-action">Войти / Зарегистрироваться</a>
+      {% endif %}
+    </div>
   </div>
-  {% endif %}
+  <div class="col-10 content">
+    {% if request.user.is_authenticated %}
+      <div class="row text-center">
+        {% get_years_buttons request %}
+        {% if request.session.office %}
+          {% get_sub_menu request %}
+        {% endif %}
+      </div>
+    {% endif %}
+
+

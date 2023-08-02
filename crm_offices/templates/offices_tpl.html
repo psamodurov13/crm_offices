@@ -1,5 +1,3 @@
 {% for office in offices %}
-<li class="nav-item">
-  <a class="nav-link {% if office.slug == current_office %}active{% endif %}" aria-current="page" href="{{ office.get_absolute_url }}">{{ office.name }} ({{ office.address }})</a>
-</li>
+<a href="{{ office.get_absolute_url }}" class="list-group-item list-group-item-action {% if office.slug == current_office %}active{% endif %}">{{ office.name }} ({{ office.address }})</a>
 {% endfor %}
