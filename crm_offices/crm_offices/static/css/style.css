@@ -53,6 +53,9 @@ table.table.describe_table tbody tr:last-child td {
     background: lightpink !important;
     font-weight: bold;
 }
+thead tr th.gray-background {
+    background-color: #ededed !important;
+}
 table tr td.gray-background, table tr th.gray-background {
 background-color: #ededed;
 }
