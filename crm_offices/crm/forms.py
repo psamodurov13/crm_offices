@@ -128,4 +128,4 @@ class AddSalaryForm(forms.ModelForm):
 class AddSalaryMultipleForm(forms.Form):
     date_employee = forms.JSONField(label='Данные', widget=forms.HiddenInput())
     amount = forms.IntegerField(label='Зарплата', widget=forms.NumberInput())
-    comment = forms.Field(label='Комментарий', widget=forms.TextInput())
+    comment = forms.Field(label='Комментарий', widget=forms.TextInput(), required=False)
