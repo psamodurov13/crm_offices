@@ -4,6 +4,12 @@ from crm_offices.settings import logger
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django import forms
 from .models import Currency, Employees, Offices, Fines, Salaries
+import sys
+
+if 'makemigrations' not in sys.argv and 'migrate' not in sys.argv:
+    migrations = False
+else:
+    migrations = True
 
 
 class UserLoginForm(AuthenticationForm):
@@ -26,12 +32,13 @@ class AddRentPaymentForm(forms.Form):
     period = forms.DateField(label='Оплата за период', widget=forms.DateInput())
     date = forms.DateField(label='Дата платежа', widget=forms.DateInput(), initial=datetime.datetime.today())
     amount = forms.IntegerField(label='Сумма', widget=forms.TextInput())
-    currency = forms.ChoiceField(
-        label='Валюта',
-        choices=[(i.id, i.symbol) for i in Currency.objects.all()],
-        widget=forms.Select(),
-        initial=1
-    )
+    if not migrations:
+        currency = forms.ChoiceField(
+            label='Валюта',
+            choices=[(i.id, i.symbol) for i in Currency.objects.all()],
+            widget=forms.Select(),
+            initial=1
+        )
 
 
 class AddExpenseForm(forms.Form):
