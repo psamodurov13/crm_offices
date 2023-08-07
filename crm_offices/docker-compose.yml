@@ -19,7 +19,7 @@ services:
     env_file:
       - .env
     command:
-      bash -c "./manage.py collectstatic --noinput && sleep 30 && ./manage.py migrate  && gunicorn -b 0.0.0.0:8000 crm_offices.wsgi:application"
+      bash -c "./manage.py collectstatic --noinput && sleep 30 && ./manage.py migrate && python /crm/create_superuser_if_not_exists.py && gunicorn -b 0.0.0.0:8000 crm_offices.wsgi:application"
   nginx:
     build:
       dockerfile: ./Dockerfile

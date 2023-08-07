@@ -62,7 +62,7 @@ def index(request):
             'office': i.employee.office.name
         })
     logger.info(f'RESULTS - {results}')
-    with open('../expenses.json', 'w') as file:
+    with open('expenses.json', 'w') as file:
         json.dump(results, file, indent=4, default=str)
     if results:
         df = pd.DataFrame.from_dict(results)

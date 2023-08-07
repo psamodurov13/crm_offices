@@ -28,3 +28,6 @@ USER crm
 
 CMD ["gunicorn","-b","0.0.0.0:8001","crm_offices.wsgi:application"]
 
+COPY create_superuser_if_not_exists.py /crm/create_superuser_if_not_exists.py
+
+
