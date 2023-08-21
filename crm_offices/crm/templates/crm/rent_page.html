@@ -11,6 +11,7 @@
       <tr>
         <th>Месяц</th>
         <th>Расход</th>
+        <th>Комментарий</th>
       </tr>
     </thead>
     <tbody>
@@ -22,6 +23,7 @@
                 <td rowspan="{{ value|length }}">{{ key }}</td>
               {% endif %}
               <td>{{ item.amount }} {{ item.currency.symbol }} ({{ item.date }})</td>
+              <td>{{ item.comment }}</td>
             </tr>
           {% endfor %}
         {% else %}
@@ -29,6 +31,7 @@
           <td>{{ key }}</td>
           {% if value %}
           <td>{{ value.0.amount }} {{ value.0.currency.symbol }} ({{ value.0.date }})</td>
+          <td>{{ value.0.comment }}</td>
           {% else %}
           <td>
             {% if request.user.is_superuser %}
@@ -37,6 +40,7 @@
             -
             {% endif %}
           </td>
+          <td></td>
           {% endif %}
         </tr>
         {% endif %}

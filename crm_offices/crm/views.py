@@ -273,6 +273,7 @@ def rent_page(request):
                 currency=Currency.objects.get(id=form_data['currency']),
                 office=Offices.objects.get(slug=current_office),
                 expense_type=ExpensesTypes.objects.get(name='Аренда'),
+                comment=form_data['comment'],
             )
             logger.info(f'NEW EXPENSE WAS CREATED - {new_rent_payment}')
             messages.success(request, 'Новый платеж по аренде добавлен')

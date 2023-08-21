@@ -32,6 +32,7 @@ class AddRentPaymentForm(forms.Form):
     period = forms.DateField(label='Оплата за период', widget=forms.DateInput())
     date = forms.DateField(label='Дата платежа', widget=forms.DateInput(), initial=datetime.datetime.today())
     amount = forms.IntegerField(label='Сумма', widget=forms.TextInput())
+    comment = forms.Field(label='Комментарий', widget=forms.TextInput())
     if not migrations:
         currency = forms.ChoiceField(
             label='Валюта',
