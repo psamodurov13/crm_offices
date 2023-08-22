@@ -16,4 +16,9 @@ urlpatterns = [
     path('login', views.user_login, name='login'),
     path('register', views.user_register, name='register'),
     path('logout', views.user_logout, name='logout'),
+    path('edit_expense/<int:pk>', views.EditExpense.as_view(), name='edit_expense'),
+    path('delete_expense/<int:pk>', views.DeleteExpense.as_view(), name='delete_expense'),
+    path('edit_office/<int:pk>', views.EditOffice.as_view(), name='edit_office'),
+    path('delete_office/<int:pk>', views.DeleteOffice.as_view(), name='delete_office'),
+
 ]

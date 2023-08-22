@@ -22,7 +22,7 @@
               {% if forloop.counter == 1 %}
                 <td rowspan="{{ value|length }}">{{ key }}</td>
               {% endif %}
-              <td>{{ item.amount }} {{ item.currency.symbol }} ({{ item.date }})</td>
+              <td>{{ item.amount }} {{ item.currency.symbol }} ({{ item.date }}) <a href="{% url 'edit_expense' item.id %}"><i class="fa-regular fa-pen-to-square"></i></a> <a href="{% url 'delete_expense' item.id %}"><i class="fa-regular fa-trash-can"></i></a></td>
               <td>{{ item.comment }}</td>
             </tr>
           {% endfor %}
@@ -30,7 +30,7 @@
         <tr>
           <td>{{ key }}</td>
           {% if value %}
-          <td>{{ value.0.amount }} {{ value.0.currency.symbol }} ({{ value.0.date }})</td>
+          <td>{{ value.0.amount }} {{ value.0.currency.symbol }} ({{ value.0.date }}) <a href="{% url 'edit_expense' value.0.id %}"><i class="fa-regular fa-pen-to-square"></i></a> <a href="{% url 'delete_expense' value.0.id %}"><i class="fa-regular fa-trash-can"></i></a></td>
           <td>{{ value.0.comment }}</td>
           {% else %}
           <td>

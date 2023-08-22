@@ -27,7 +27,7 @@
                 <td rowspan="{{ value|length }}">{{ key }}</td>
               {% endif %}
               <td>{{ item.date }}</td>
-              <td>{{ item.amount }} {{ item.currency.symbol }}</td>
+              <td>{{ item.amount }} {{ item.currency.symbol }} <a href="{% url 'edit_expense' item.id %}"><i class="fa-regular fa-pen-to-square"></i></a> <a href="{% url 'delete_expense' item.id %}"><i class="fa-regular fa-trash-can"></i></a></td>
               <td>{{ item.comment }}</td>
             </tr>
           {% endfor %}
@@ -36,7 +36,7 @@
           <td>{{ key }}</td>
           {% if value %}
           <td>{{ value.0.date }}</td>
-          <td>{{ value.0.amount }} {{ value.0.currency.symbol }}</td>
+          <td>{{ value.0.amount }} {{ value.0.currency.symbol }} <a href="{% url 'edit_expense' value.0.id %}"><i class="fa-regular fa-pen-to-square"></i></a> <a href="{% url 'delete_expense' value.0.id %}"><i class="fa-regular fa-trash-can"></i></a></td>
           <td>{{ value.0.comment }}</td>
           {% else %}
           <td>-</td>

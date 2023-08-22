@@ -11,7 +11,8 @@ from crm_offices.settings import logger
 from .models import *
 from datetime import datetime, date
 from crm_offices.utils import get_office, get_year, months, months_to_digit
-from django.views.generic.edit import FormMixin
+from django.views.generic.edit import FormMixin, DeleteView
+from django.views.generic import UpdateView
 from calendar import monthrange
 import copy
 import json
@@ -634,5 +635,83 @@ class EmployeesList(FormMixin, ListView):
     def form_invalid(self, form):
         messages.error(self.request, f'Сотрудник не добавлен. Ошибка в форме')
         return JsonResponse({'error': True, 'errors': form.errors, 'message': 'Проверьте форму'})
+
+
+class EditExpense(CustomStr, UpdateView):
+    model = Expenses
+    fields = ['date', 'period', 'amount', 'currency', 'office', 'comment']
+    success_url = reverse_lazy('/')
+    template_name_suffix = '_edit_form'
+
+    def form_valid(self, form):
+        """If the form is valid, save the associated model."""
+        self.object = form.save()
+        messages.success(self.request, 'Расход изменен')
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        logger.info(f'SUCCESS URL - {self.kwargs}')
+        expense_type_name = Expenses.objects.get(id=self.kwargs['pk']).expense_type.name
+        if expense_type_name == 'Аренда':
+            result = 'rent'
+        elif expense_type_name == 'Коммунальные платежи':
+            result = 'public_services'
+        elif expense_type_name == 'Иные расходы':
+            result = 'other_expenses'
+        else:
+            result = ''
+        logger.info(f'SUCCESS URL - {result}')
+        return reverse(result)
+
+
+class DeleteExpense(CustomStr, DeleteView):
+    model = Expenses
+    success_url = reverse_lazy('/')
+
+    def form_valid(self, form):
+        success_url = self.get_success_url()
+        self.object.delete()
+        messages.success(self.request, 'Расход удален')
+        return HttpResponseRedirect(success_url)
+
+    def get_success_url(self):
+        logger.info(f'SUCCESS URL - {self.kwargs}')
+        expense_type_name = Expenses.objects.get(id=self.kwargs['pk']).expense_type.name
+        if expense_type_name == 'Аренда':
+            result = 'rent'
+        elif expense_type_name == 'Коммунальные платежи':
+            result = 'public_services'
+        elif expense_type_name == 'Иные расходы':
+            result = 'other_expenses'
+        else:
+            result = ''
+        logger.info(f'SUCCESS URL - {result}')
+        return reverse(result)
+
+
+class EditOffice(CustomStr, UpdateView):
+    model = Offices
+    fields = ['name', 'address', 'admin_user']
+    success_url = reverse_lazy('offices_list')
+    template_name_suffix = '_edit_form'
+
+    def form_valid(self, form):
+        """If the form is valid, save the associated model."""
+        self.object = form.save()
+        messages.success(self.request, 'Пункт изменен')
+        return super().form_valid(form)
+
+
+class DeleteOffice(CustomStr, DeleteView):
+    model = Offices
+    success_url = reverse_lazy('offices_list')
+
+    def form_valid(self, form):
+        success_url = self.get_success_url()
+        self.object.delete()
+        messages.success(self.request, 'Пункт удален')
+        return HttpResponseRedirect(success_url)
+
+
 
 

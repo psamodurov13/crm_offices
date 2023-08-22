@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% load crispy_forms_filters %}
+
+{% block title %}Изменение пункта{% endblock %}
+
+{% block content %}
+    <h1>Изменение пункта</h1>
+<form method="post">
+  {% csrf_token %}
+    {{ form|crispy }}
+    <a type=button value="Previous Page" onClick="javascript:history.go(-1);" class="btn btn-primary">Назад</a>
+    <button type="submit" class="btn btn-primary">Изменить</button>
+</form>
+{% endblock %}

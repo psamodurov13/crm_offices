@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% load crispy_forms_filters %}
+
+{% block title %}Удаление расхода{% endblock %}
+
+{% block content %}
+    <h1>Удаление расхода</h1>
+<p>Вы действительно хотите удалить расход {{ object.amount }} {{ object.currency }} / {{ object.date }}?</p>
+<form method="post">
+  {% csrf_token %}
+
+    {{ form|crispy }}
+    <a type=button value="Previous Page" onClick="javascript:history.go(-1);" class="btn btn-primary">Назад</a>
+    <button type="submit" class="btn btn-primary">Удалить</button>
+</form>
+{% endblock %}

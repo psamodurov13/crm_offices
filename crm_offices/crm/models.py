@@ -1,4 +1,5 @@
 from django.db import models
+
 from crm_offices.utils import CustomStr
 from django.contrib.auth.models import User
 from django.urls import reverse
@@ -88,3 +89,5 @@ class Expenses(CustomStr, models.Model):
     class Meta:
         verbose_name = 'Расход'
         verbose_name_plural = 'Расходы'
+        ordering = ['date']
+

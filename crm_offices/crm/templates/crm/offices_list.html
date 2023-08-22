@@ -15,7 +15,7 @@
   <div class="col-sm-12 col-md-6 col-lg-4 p-2">
     <div class="card">
       <div class="card-header">
-        {{ office.name }}
+        {{ office.name }} <a href="{% url 'edit_office' office.id %}"><i class="fa-regular fa-pen-to-square"></i></a> <a href="{% url 'delete_office' office.id %}"><i class="fa-regular fa-trash-can"></i></a>
       </div>
       <div class="card-body">
         <p class="card-text m-1">Адрес: {{ office.address }}</p>
